@@ -30,11 +30,11 @@ const AuthPage: React.FC = () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const isEmail = emailRegex.test(credentials.identifier);
 
-    const payload: { email?: string; username?: string; password: string } = {
+    const payload: { email?: string; name?: string; password: string } = {
       password: credentials.password,
       ...(isEmail
         ? { email: credentials.identifier }
-        : { username: credentials.identifier }),
+        : { name: credentials.identifier }),
     };
     dispatch(loginUser(payload));
   };
