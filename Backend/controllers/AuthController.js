@@ -55,7 +55,7 @@ const loginUser = async (req, res, next) => {
     }
 
     const user = await usermodel.findOne(
-      email ? { email } : { name: username }
+      email ? { email } : { name: username },
     );
 
     if (!user) {
@@ -72,6 +72,13 @@ const loginUser = async (req, res, next) => {
     }
 
     const token = generateToken({ id: user._id, roles: user.roles });
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production" ? true : false,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    });
 
     return res.status(200).json({
       message: "Login successful",
@@ -116,14 +123,13 @@ const getCurrentUser = async (req, res, next) => {
 
 const logoutUser = async (req, res, next) => {
   try {
-    // Clear the token cookie set by login
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production" ? true : false,
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      path: "/",
     });
 
-    // Optionally, destroy session if you are using express-session
     req.session.destroy((err) => {
       if (err) console.error("Session destruction error:", err);
     });
