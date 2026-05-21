@@ -22,7 +22,7 @@ const cardVariant = {
 };
 
 const inputVariant = {
-  hover: { scale: 1.005, transition: { duration: 0.2 } }, // મોબાઇલ ઝૂમિંગ કંટ્રોલ કરવા સહેજ ઓછું કર્યું
+  hover: { scale: 1.005, transition: { duration: 0.2 } },
   focus: { scale: 1.01, transition: { duration: 0.2 } },
 };
 
@@ -145,36 +145,34 @@ const AdminProfile: React.FC = () => {
 
   if (loading && !currentUser) {
     return (
-      <div className="p-6 flex flex-col justify-center items-center min-h-[70vh] text-slate-500 text-sm font-medium">
+      <div className="p-4 flex flex-col justify-center items-center min-h-[70vh] text-slate-500 text-sm font-medium w-full">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-        <span>Loading secure profile...</span>
+        <span className="text-center">Loading secure profile...</span>
       </div>
     );
   }
 
   return (
-    <div className="p-4 sm:p-6 bg-gradient-to-br from-blue-50 via-white to-indigo-50 min-h-full">
-      <h1 className="text-2xl sm:text-3xl font-black mb-6 text-slate-800">
+    <div className="p-3 sm:p-5 md:p-6 bg-gradient-to-br from-blue-50 via-white to-indigo-50 min-h-full overflow-x-hidden">
+      <h1 className="text-xl sm:text-3xl font-black mb-5 sm:mb-6 text-slate-800 leading-tight">
         My Profile
       </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left / Main Panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6">
         <motion.div
-          className="lg:col-span-2 space-y-6"
+          className="lg:col-span-2 space-y-5 sm:space-y-6"
           initial="hidden"
           animate="visible"
           variants={cardVariant}
         >
-          {/* Profile Details Container */}
-          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/60 shadow-sm space-y-6">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
-              <h2 className="text-lg font-bold text-slate-700">
+          <div className="bg-white p-4 sm:p-5 md:p-6 rounded-2xl border border-slate-200/60 shadow-sm space-y-5 sm:space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2.5 sm:pb-3">
+              <h2 className="text-sm sm:text-lg font-bold text-slate-700 truncate pr-2">
                 Identity & Access Metadata
               </h2>
               {!isEditing && (
                 <button
-                  className="text-blue-600 hover:text-blue-700 p-1 rounded-lg hover:bg-slate-50 transition"
+                  className="text-blue-600 hover:text-blue-700 p-1.5 rounded-lg hover:bg-slate-50 transition shrink-0"
                   onClick={() => setIsEditing(true)}
                   aria-label="Edit profile"
                 >
@@ -183,8 +181,7 @@ const AdminProfile: React.FC = () => {
               )}
             </div>
 
-            {/* Profile Avatar Segment */}
-            <div className="flex items-center gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+            <div className="flex flex-col xs:flex-row items-center xs:items-center gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100 w-full">
               <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-200 border border-slate-300 flex items-center justify-center font-bold text-white shrink-0 shadow-inner">
                 {profilePreview ? (
                   <img
@@ -193,19 +190,19 @@ const AdminProfile: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <UserIcon size={28} className="text-slate-400" />
+                  <UserIcon size={26} className="text-slate-400" />
                 )}
               </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-bold text-slate-800 truncate">
+              <div className="min-w-0 flex-1 text-center xs:text-left w-full">
+                <h3 className="text-base sm:text-lg font-bold text-slate-800 truncate">
                   {currentUser?.name}
                 </h3>
-                <p className="text-slate-500 text-sm truncate">
+                <p className="text-slate-500 text-xs sm:text-sm truncate">
                   {currentUser?.email}
                 </p>
-                <div className="flex mt-1.5">
+                <div className="flex justify-center xs:justify-start mt-1.5">
                   <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold uppercase border tracking-wider ${getRoleBadgeColor(currentUser?.roles)}`}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] sm:text-xs font-bold uppercase border tracking-wider ${getRoleBadgeColor(currentUser?.roles)}`}
                   >
                     <Shield className="w-3 h-3 mr-1 shrink-0" />
                     {currentUser?.roles}
@@ -214,8 +211,7 @@ const AdminProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* Fields Grid Component */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
               {[
                 { label: "Full Name", field: "name", type: "text" },
                 {
@@ -229,7 +225,7 @@ const AdminProfile: React.FC = () => {
                   field: "roles",
                   type: "text",
                   disabled: true,
-                }, 
+                },
                 { label: "Contact Phone", field: "phone", type: "text" },
                 { label: "Job Designation", field: "jobTitle", type: "text" },
                 {
@@ -243,15 +239,14 @@ const AdminProfile: React.FC = () => {
                   type: "text",
                 },
               ].map(({ label, field, type, disabled }) => {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                const isFieldDisabled = disabled || !isEditing;
                 return (
                   <motion.div
                     key={field}
                     variants={inputVariant}
                     whileHover={isEditing ? "hover" : undefined}
+                    className="w-full"
                   >
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
                       {label}
                     </label>
                     {isEditing ? (
@@ -266,10 +261,10 @@ const AdminProfile: React.FC = () => {
                           handleChange(field as keyof User, e.target.value)
                         }
                         disabled={disabled}
-                        className="w-full border border-slate-200 bg-white disabled:bg-slate-50 disabled:text-slate-400 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition text-slate-800 font-medium"
+                        className="w-full border border-slate-200 bg-white disabled:bg-slate-50 disabled:text-slate-400 rounded-xl p-2.5 sm:p-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition text-slate-800 font-medium"
                       />
                     ) : (
-                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-700 min-h-[46px] flex items-center">
+                      <div className="p-2.5 sm:p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 min-h-[40px] sm:min-h-[46px] flex items-center truncate">
                         {String(userData[field as keyof User] || "—")}
                       </div>
                     )}
@@ -277,10 +272,9 @@ const AdminProfile: React.FC = () => {
                 );
               })}
 
-              {/* Profile Attachment Block */}
               {isEditing && (
-                <div className="col-span-1 sm:col-span-2 bg-blue-50/30 border border-dashed border-blue-200 p-4 rounded-xl">
-                  <label className="block text-xs font-bold uppercase tracking-wider text-blue-600 mb-1">
+                <div className="col-span-1 sm:col-span-2 bg-blue-50/30 border border-dashed border-blue-200 p-3.5 sm:p-4 rounded-xl w-full">
+                  <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-blue-600 mb-1.5">
                     Upload Profile Media Box
                   </label>
                   <input
@@ -291,24 +285,23 @@ const AdminProfile: React.FC = () => {
                         e.target.files ? e.target.files[0] : null,
                       )
                     }
-                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition cursor-pointer"
+                    className="w-full text-xs text-slate-500 file:mr-3 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-3 sm:file:px-4 file:rounded-xl file:border-0 file:text-[10px] sm:file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition cursor-pointer"
                   />
                 </div>
               )}
             </div>
 
-            {/* Operational Form Action Controls */}
             {isEditing && (
-              <div className="flex gap-3 pt-2 border-t border-slate-100">
+              <div className="flex flex-col xs:flex-row gap-2.5 pt-3.5 sm:pt-4 border-t border-slate-100 w-full">
                 <button
                   onClick={handleSave}
                   disabled={loading}
-                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-sm transition active:scale-95"
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition active:scale-95 w-full xs:w-auto"
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <SaveIcon height={16} stroke="white" />
+                    <SaveIcon height={14} stroke="white" />
                   )}
                   <span>Save Profile</span>
                 </button>
@@ -319,9 +312,9 @@ const AdminProfile: React.FC = () => {
                     setUserData(currentUser || {});
                   }}
                   disabled={loading}
-                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-semibold text-sm rounded-xl transition active:scale-95"
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-semibold text-xs sm:text-sm rounded-xl transition active:scale-95 w-full xs:w-auto"
                 >
-                  <CancelIcon height={16} stroke="#334155" />
+                  <CancelIcon height={14} stroke="#334155" />
                   <span>Cancel changes</span>
                 </button>
               </div>
@@ -329,49 +322,48 @@ const AdminProfile: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Right / Quick Navigation Summary Panel */}
         <motion.div
-          className="space-y-4"
+          className="space-y-4 lg:col-span-1"
           initial="hidden"
           animate="visible"
           variants={panelVariant}
         >
-          {/* Quick Actions Panel */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-3">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-1">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-2.5 sm:space-y-3">
+            <h2 className="text-[10px] sm:text-sm font-bold uppercase tracking-wider text-slate-400 mb-0.5 sm:mb-1">
               Terminal Shortcuts
             </h2>
             <button
               onClick={() => navigate("/admin/project")}
-              className="w-full bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-sm transition active:scale-[0.98]"
+              className="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 sm:py-3 rounded-xl shadow-sm transition active:scale-[0.98]"
             >
               View All Projects
             </button>
             <button
               onClick={() => navigate("/admin")}
-              className="w-full border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-semibold px-4 py-3 rounded-xl transition active:scale-[0.98]"
+              className="w-full border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs sm:text-sm font-semibold px-4 py-2.5 sm:py-3 rounded-xl transition active:scale-[0.98]"
             >
               Return Dashboard
             </button>
           </div>
 
-          {/* System Info Panel */}
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-3">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-1">
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-2.5 sm:space-y-3">
+            <h2 className="text-[10px] sm:text-sm font-bold uppercase tracking-wider text-slate-400 mb-0.5 sm:mb-1">
               System Core Diagnostics
             </h2>
-            <div className="text-sm text-slate-600 space-y-2 font-medium">
+            <div className="text-xs sm:text-sm text-slate-600 space-y-2 font-medium">
               <div className="flex justify-between border-b border-slate-50 pb-1.5">
                 <span className="text-slate-400">Environment:</span>{" "}
-                <span>Production Node</span>
+                <span className="truncate pl-2">Production Node</span>
               </div>
               <div className="flex justify-between border-b border-slate-50 pb-1.5">
                 <span className="text-slate-400">Engine Build:</span>{" "}
-                <span>v1.0.0 Stable</span>
+                <span className="truncate pl-2">v1.0.0 Stable</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-slate-400">Node Identifier:</span>{" "}
-                <span className="bg-slate-100 font-mono px-2 py-0.5 rounded text-xs text-slate-700">
+                <span className="text-slate-400 shrink-0">
+                  Node Identifier:
+                </span>{" "}
+                <span className="bg-slate-100 font-mono px-2 py-0.5 rounded text-[10px] sm:text-xs text-slate-700 truncate ml-2">
                   {currentUser?._id?.slice(0, 10)}
                 </span>
               </div>

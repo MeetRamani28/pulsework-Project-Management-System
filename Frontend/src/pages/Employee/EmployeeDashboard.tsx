@@ -128,9 +128,11 @@ const EmployeeDashboard: React.FC = () => {
 
   if (projectLoading || taskLoading || timelogLoading) {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-600 font-medium">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-        <span>Loading employee telemetry...</span>
+      <div className="w-full min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-600 font-medium px-4">
+        <Loader2 className="w-7 h-7 sm:w-8 h-8 animate-spin text-blue-600 mb-2" />
+        <span className="text-xs sm:text-sm text-center">
+          Loading employee telemetry...
+        </span>
       </div>
     );
   }
@@ -139,39 +141,39 @@ const EmployeeDashboard: React.FC = () => {
     {
       title: "My Active Projects",
       value: projectCount,
-      icon: <ProjectIcon className="w-6 h-6" />,
+      icon: <ProjectIcon className="w-5 h-5 sm:w-6 sm:h-6" />,
     },
     {
       title: "Assigned Workloads",
       value: taskCount,
-      icon: <TasksIcon className="w-6 h-6" />,
+      icon: <TasksIcon className="w-5 h-5 sm:w-6 sm:h-6" />,
     },
     {
       title: "Logged Sessions",
       value: timelogCount,
-      icon: <ClockIcon className="w-6 h-6" />,
+      icon: <ClockIcon className="w-5 h-5 sm:w-6 sm:h-6" />,
     },
   ];
 
   return (
-    <div className="w-full min-h-screen p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-blue-100 space-y-6">
+    <div className="w-full min-h-screen p-3 sm:p-5 md:p-6 bg-gradient-to-br from-blue-50 to-blue-100 space-y-5 sm:space-y-6 overflow-x-hidden">
       <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
         custom={0}
-        className="text-left md:text-center pt-2"
+        className="text-left md:text-center pt-1"
       >
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent drop-shadow-sm">
+        <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent drop-shadow-sm leading-tight">
           Welcome back,{" "}
           <span className="text-blue-700">{user?.name || "User"}</span>!
         </h1>
-        <p className="text-slate-500 text-sm mt-1">
+        <p className="text-slate-500 text-xs sm:text-sm mt-1">
           PulseWork Employee Production Hub
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {summaryCards.map((card, i) => (
           <motion.div
             key={i}
@@ -183,18 +185,18 @@ const EmployeeDashboard: React.FC = () => {
             className="w-full"
           >
             <motion.div
-              className="p-5 shadow-sm rounded-2xl bg-white border border-slate-200/50 flex items-center justify-between hover:shadow-md transition-all duration-200"
+              className="p-4 sm:p-5 shadow-sm rounded-2xl bg-white border border-slate-200/50 flex items-center justify-between hover:shadow-md transition-all duration-200"
               variants={cardHover}
             >
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm font-semibold uppercase tracking-wider text-slate-400 truncate">
                   {card.title}
                 </p>
-                <h2 className="text-3xl font-black text-slate-800 mt-1">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-800 mt-0.5 sm:mt-1">
                   {card.value}
                 </h2>
               </div>
-              <div className="text-blue-600 bg-blue-50 p-3 rounded-xl">
+              <div className="text-blue-600 bg-blue-50 p-2.5 sm:p-3 rounded-xl shrink-0 ml-2">
                 {card.icon}
               </div>
             </motion.div>
@@ -208,33 +210,43 @@ const EmployeeDashboard: React.FC = () => {
           animate="visible"
           variants={fadeInUp}
           custom={4}
-          className="p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
+          className="p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
         >
-          <h2 className="font-bold text-slate-700 mb-4 border-b border-slate-100 pb-3">
+          <h2 className="text-sm sm:text-base font-bold text-slate-700 mb-4 border-b border-slate-100 pb-2.5 sm:pb-3 truncate">
             My Weekly Tasks Flow
           </h2>
-          <div className="w-full h-[220px]">
+          <div className="w-full h-[180px] sm:h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={weeklyTasksData}
-                margin={{ left: -25, right: 10 }}
+                margin={{ left: -25, right: 10, top: 5, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                <XAxis
+                  dataKey="name"
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  tickLine={false}
+                />
+                <YAxis
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  allowDecimals={false}
+                  tickLine={false}
+                />
                 <Tooltip />
                 <Line
                   type="monotone"
                   dataKey="tasks"
                   stroke="#16a34a"
-                  strokeWidth={3}
+                  strokeWidth={2.5}
                   dot={{
-                    r: 4,
+                    r: 3.5,
                     stroke: "#16a34a",
-                    strokeWidth: 2,
+                    strokeWidth: 1.5,
                     fill: "#fff",
                   }}
-                  activeDot={{ r: 6 }}
+                  activeDot={{ r: 5 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -246,33 +258,43 @@ const EmployeeDashboard: React.FC = () => {
           animate="visible"
           variants={fadeInUp}
           custom={5}
-          className="p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
+          className="p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
         >
-          <h2 className="font-bold text-slate-700 mb-4 border-b border-slate-100 pb-3">
+          <h2 className="text-sm sm:text-base font-bold text-slate-700 mb-4 border-b border-slate-100 pb-2.5 sm:pb-3 truncate">
             My Weekly TimeLogs Metric
           </h2>
-          <div className="w-full h-[220px]">
+          <div className="w-full h-[180px] sm:h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={weeklyTimeLogsData}
-                margin={{ left: -25, right: 10 }}
+                margin={{ left: -25, right: 10, top: 5, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                <XAxis
+                  dataKey="name"
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  tickLine={false}
+                />
+                <YAxis
+                  stroke="#94a3b8"
+                  fontSize={11}
+                  allowDecimals={false}
+                  tickLine={false}
+                />
                 <Tooltip />
                 <Line
                   type="monotone"
                   dataKey="logs"
                   stroke="#3b82f6"
-                  strokeWidth={3}
+                  strokeWidth={2.5}
                   dot={{
-                    r: 4,
+                    r: 3.5,
                     stroke: "#3b82f6",
-                    strokeWidth: 2,
+                    strokeWidth: 1.5,
                     fill: "#fff",
                   }}
-                  activeDot={{ r: 6 }}
+                  activeDot={{ r: 5 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -285,73 +307,80 @@ const EmployeeDashboard: React.FC = () => {
         animate="visible"
         variants={fadeInUp}
         custom={6}
-        className="p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
+        className="p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
       >
-        <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
-          <TasksIcon className="w-5 h-5 text-blue-600" strokeWidth={2} />
+        <h2 className="text-base sm:text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
+          <TasksIcon
+            className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0"
+            strokeWidth={2}
+          />
           My Operational Pipelines (Active)
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-slate-100">
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50/70 text-slate-500 font-medium">
-              <tr>
-                <th className="px-4 py-3 text-left tracking-wide">Task Node</th>
-                <th className="px-4 py-3 text-left tracking-wide">
-                  Project Context
-                </th>
-                <th className="px-4 py-3 text-left tracking-wide">
-                  Lifecycle Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
-              {myTasks.filter((t) => t.status !== "completed").length > 0 ? (
-                myTasks
-                  .filter((t) => t.status !== "completed")
-                  .map((task) => (
-                    <tr
-                      key={task._id}
-                      className="hover:bg-slate-50/50 transition duration-150"
-                    >
-                      <td className="px-4 py-3 font-semibold text-slate-800">
-                        {task.title}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {typeof task.project === "string"
-                          ? task.project
-                          : task.project?.name}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                            task.status === "in-progress"
-                              ? "bg-amber-50 text-amber-700 border-amber-200/40"
-                              : task.status === "todo"
-                                ? "bg-slate-50 text-slate-600 border-slate-200/40"
-                                : "bg-blue-50 text-blue-700 border-blue-200/40"
-                          }`}
-                        >
-                          {task.status === "in-progress"
-                            ? "In Progress"
-                            : task.status === "todo"
-                              ? "Todo"
-                              : "Completed"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-              ) : (
+        <div className="overflow-x-auto rounded-xl border border-slate-100 -mx-4 sm:mx-0">
+          <div className="inline-block min-w-full align-middle">
+            <table className="min-w-full divide-y divide-slate-100 text-xs sm:text-sm">
+              <thead className="bg-slate-50/70 text-slate-500 font-medium">
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="px-4 py-8 text-center text-slate-400 italic"
-                  >
-                    No operational branches in current queue.
-                  </td>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Task Node
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Project Context
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Lifecycle Status
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
+                {myTasks.filter((t) => t.status !== "completed").length > 0 ? (
+                  myTasks
+                    .filter((t) => t.status !== "completed")
+                    .map((task) => (
+                      <tr
+                        key={task._id}
+                        className="hover:bg-slate-50/50 transition duration-150"
+                      >
+                        <td className="px-3 sm:px-4 py-3 font-semibold text-slate-800 whitespace-nowrap max-w-[150px] truncate">
+                          {task.title}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-slate-600 whitespace-nowrap max-w-[150px] truncate">
+                          {typeof task.project === "string"
+                            ? task.project
+                            : task.project?.name}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold border ${
+                              task.status === "in-progress"
+                                ? "bg-amber-50 text-amber-700 border-amber-200/40"
+                                : task.status === "todo"
+                                  ? "bg-slate-50 text-slate-600 border-slate-200/40"
+                                  : "bg-blue-50 text-blue-700 border-blue-200/40"
+                            }`}
+                          >
+                            {task.status === "in-progress"
+                              ? "In Progress"
+                              : task.status === "todo"
+                                ? "Todo"
+                                : "Completed"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      className="px-4 py-8 text-center text-slate-400 italic"
+                    >
+                      No operational branches in current queue.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </motion.div>
     </div>

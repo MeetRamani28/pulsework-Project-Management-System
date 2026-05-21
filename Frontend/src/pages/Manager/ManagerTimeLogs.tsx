@@ -89,36 +89,36 @@ const ManagerTimeLogs: React.FC = () => {
   });
 
   return (
-    <div className="p-4 sm:p-6 bg-slate-50/50 min-h-screen">
+    <div className="p-3 sm:p-5 md:p-6 bg-slate-50/50 min-h-screen overflow-x-hidden">
       <Toaster position="bottom-right" />
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-black text-slate-800">
+      <div className="mb-6 w-full">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-800 tracking-tight">
           Manager Time Logs
         </h1>
-        <p className="text-slate-500 text-sm mt-0.5">
+        <p className="text-slate-500 text-xs sm:text-sm mt-0.5 truncate">
           Audit and manage timeline entries submission for your projects
         </p>
       </div>
 
       {loading && !logToDelete && (
-        <div className="flex flex-col items-center justify-center py-20 text-slate-500 text-sm font-medium">
-          <Loader2 className="animate-spin text-blue-600 w-8 h-8 mb-2" />
-          <span>Synchronizing team work logs...</span>
+        <div className="flex flex-col items-center justify-center py-20 text-slate-500 text-xs sm:text-sm font-medium w-full px-4">
+          <Loader2 className="animate-spin text-blue-600 w-7 h-7 sm:w-8 sm:h-8 mb-2" />
+          <span className="text-center">Synchronizing team work logs...</span>
         </div>
       )}
 
       {!loading && managerLogs.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 w-full">
           {managerLogs.map((log: TimeLog) => (
             <motion.div
               key={log._id}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200"
+              className="bg-white rounded-2xl border border-slate-200/70 p-4 sm:p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200 w-full min-w-0"
             >
-              <div>
-                <h2 className="text-base font-bold text-slate-800 mb-3 truncate">
+              <div className="min-w-0 w-full">
+                <h2 className="text-sm sm:text-base font-bold text-slate-800 mb-3 truncate">
                   {(() => {
                     const taskId =
                       typeof log.task === "string" ? log.task : log.task?._id;
@@ -127,15 +127,15 @@ const ManagerTimeLogs: React.FC = () => {
                   })()}
                 </h2>
 
-                <div className="flex flex-col gap-2.5 text-xs font-semibold text-slate-600 border-t border-slate-100 pt-3">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2.5 text-xs font-semibold text-slate-600 border-t border-slate-100 pt-3 w-full">
+                  <div className="flex items-center gap-2 w-full min-w-0">
                     <ProjectIcon
-                      height={16}
+                      height={14}
                       width={14}
                       stroke="#64748b"
                       className="shrink-0"
                     />
-                    <span className="truncate">
+                    <span className="truncate text-[11px] sm:text-xs">
                       Project:{" "}
                       <strong className="text-slate-800 font-bold">
                         {(() => {
@@ -151,30 +151,30 @@ const ManagerTimeLogs: React.FC = () => {
                       </strong>
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full min-w-0">
                     <Users
-                      height={16}
+                      height={14}
                       width={14}
                       stroke="#64748b"
                       className="shrink-0"
                     />
-                    <span className="truncate">
+                    <span className="truncate text-[11px] sm:text-xs">
                       Operator:{" "}
                       <strong className="text-slate-800 font-bold">
                         {log.user?.name || "—"}
                       </strong>
                     </span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full min-w-0">
                     <Calendar1
-                      height={16}
+                      height={14}
                       width={14}
                       stroke="#64748b"
                       className="shrink-0"
                     />
-                    <span className="text-slate-500 font-medium">
+                    <span className="truncate text-[11px] sm:text-xs text-slate-500 font-medium">
                       Start:{" "}
-                      <strong className="text-slate-700 font-mono text-[11px]">
+                      <strong className="text-slate-700 font-mono text-[10px] sm:text-[11px]">
                         {log.startTime
                           ? new Date(log.startTime).toLocaleString()
                           : "N/A"}
@@ -182,16 +182,16 @@ const ManagerTimeLogs: React.FC = () => {
                     </span>
                   </div>
                   {log.endTime && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full min-w-0">
                       <Calendar1
-                        height={16}
+                        height={14}
                         width={14}
                         stroke="#64748b"
                         className="shrink-0"
                       />
-                      <span className="text-slate-500 font-medium">
+                      <span className="truncate text-[11px] sm:text-xs text-slate-500 font-medium">
                         Stop:{" "}
-                        <strong className="text-slate-700 font-mono text-[11px]">
+                        <strong className="text-slate-700 font-mono text-[10px] sm:text-[11px]">
                           {new Date(log.endTime).toLocaleString()}
                         </strong>
                       </span>
@@ -200,9 +200,9 @@ const ManagerTimeLogs: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-slate-50 mt-4 pt-3">
+              <div className="flex items-center justify-between border-t border-slate-50 mt-4 pt-2 w-full">
                 <span
-                  className={`px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
+                  className={`px-2 py-0.5 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider rounded-full border shrink-0 ${
                     log.status === "running"
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200/40"
                       : log.status === "paused"
@@ -213,11 +213,12 @@ const ManagerTimeLogs: React.FC = () => {
                   {log.status}
                 </span>
                 <button
+                  type="button"
                   onClick={() => setLogToDelete(log._id)}
-                  className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition"
+                  className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition shrink-0"
                   aria-label="Delete work log"
                 >
-                  <Delete height={18} stroke="currentColor" />
+                  <Delete height={16} stroke="currentColor" />
                 </button>
               </div>
             </motion.div>
@@ -226,7 +227,7 @@ const ManagerTimeLogs: React.FC = () => {
       )}
 
       {!loading && managerLogs.length === 0 && (
-        <div className="text-center bg-white border border-dashed rounded-2xl p-12 text-slate-400 italic text-sm shadow-sm">
+        <div className="text-center bg-white border border-dashed rounded-2xl p-8 sm:p-12 text-slate-400 italic text-xs sm:text-sm shadow-sm w-full">
           No time logs structured for your active project nodes.
         </div>
       )}
@@ -242,29 +243,31 @@ const ManagerTimeLogs: React.FC = () => {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm relative z-10 text-center"
+              className="bg-white rounded-2xl shadow-xl p-5 sm:p-6 w-full max-w-[320px] xs:max-w-sm relative z-10 text-center"
             >
-              <div className="mx-auto w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600 mb-3 border border-red-100">
-                <AlertTriangle size={24} />
+              <div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600 mb-3 border border-red-100 shrink-0">
+                <AlertTriangle size={22} />
               </div>
-              <h3 className="text-base font-bold text-slate-800">
+              <h3 className="text-sm sm:text-base font-bold text-slate-800">
                 Confirm Deletion
               </h3>
-              <p className="text-slate-500 text-sm mt-1.5 leading-relaxed">
+              <p className="text-slate-500 text-xs sm:text-sm mt-1.5 leading-relaxed">
                 Are you absolutely sure you want to terminate this operational
                 time log? This database sweep cannot be reversed.
               </p>
-              <div className="flex gap-2.5 mt-5 border-t border-slate-50 pt-4">
+              <div className="flex gap-2 pt-4 mt-4 border-t border-slate-50 w-full">
                 <button
+                  type="button"
                   onClick={() => setLogToDelete(null)}
-                  className="flex-1 py-2 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                  className="flex-1 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
                   disabled={isDeletingLocal}
                 >
                   Dismiss
                 </button>
                 <button
+                  type="button"
                   onClick={confirmDelete}
-                  className="flex-1 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition active:scale-95"
+                  className="flex-1 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition active:scale-95"
                   disabled={isDeletingLocal}
                 >
                   {isDeletingLocal ? (

@@ -50,12 +50,12 @@ const fadeInUp = {
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.1, duration: 0.5 }, // એનિમશેન સહેજ ફાસ્ટ અને સ્મૂથ કર્યું
+    transition: { delay: i * 0.1, duration: 0.5 },
   }),
 };
 
 const cardHover = {
-  hover: { scale: 1.02, transition: { duration: 0.2 } }, // મોબાઇલ પર અચાનક ઝૂમ અટકાવવા સ્કેલ સહેજ ઓછો કર્યો
+  hover: { scale: 1.02, transition: { duration: 0.2 } },
 };
 
 const AdminDashboard: React.FC = () => {
@@ -166,9 +166,11 @@ const AdminDashboard: React.FC = () => {
 
   if (projectLoading || taskLoading || userLoading) {
     return (
-      <div className="w-full min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-600 font-medium">
+      <div className="w-full min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-600 font-medium px-4">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-        <span>Loading dashboard data...</span>
+        <span className="text-sm sm:text-base text-center">
+          Loading dashboard data...
+        </span>
       </div>
     );
   }
@@ -177,35 +179,39 @@ const AdminDashboard: React.FC = () => {
     {
       title: "Projects",
       value: projectCount,
-      icon: <ProjectIcon className="w-6 h-6" />,
+      icon: <ProjectIcon className="w-5 h-5 sm:w-6 sm:h-6" />,
     },
     {
       title: "Tasks",
       value: taskCount,
-      icon: <BarChart className="w-6 h-6" />,
+      icon: <BarChart className="w-5 h-5 sm:w-6 sm:h-6" />,
     },
-    { title: "Users", value: userCount, icon: <Users className="w-6 h-6" /> },
+    {
+      title: "Users",
+      value: userCount,
+      icon: <Users className="w-5 h-5 sm:w-6 sm:h-6" />,
+    },
   ];
 
   return (
-    <div className="w-full min-h-screen p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-blue-100 space-y-6">
+    <div className="w-full min-h-screen p-3 sm:p-5 md:p-6 bg-gradient-to-br from-blue-50 to-blue-100 space-y-5 sm:space-y-6 overflow-x-hidden">
       <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
         custom={0}
-        className="text-left md:text-center pt-2"
+        className="text-left md:text-center pt-1"
       >
-        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent drop-shadow-sm">
+        <h1 className="text-xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent drop-shadow-sm leading-tight">
           Welcome back,{" "}
           <span className="text-blue-700">{user?.name || "Admin"}</span>!
         </h1>
-        <p className="text-slate-500 text-sm mt-1">
+        <p className="text-slate-500 text-xs sm:text-sm mt-1">
           PulseWork Management Dashboard Console
         </p>
       </motion.div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {summaryCards.map((card, i) => (
           <motion.div
             key={i}
@@ -217,18 +223,18 @@ const AdminDashboard: React.FC = () => {
             className="w-full"
           >
             <motion.div
-              className="p-5 shadow-sm rounded-2xl bg-white border border-slate-200/50 flex items-center justify-between hover:shadow-md transition-all duration-200"
+              className="p-4 sm:p-5 shadow-sm rounded-2xl bg-white border border-slate-200/50 flex items-center justify-between hover:shadow-md transition-all duration-200"
               variants={cardHover}
             >
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+              <div className="min-w-0">
+                <p className="text-[10px] sm:text-sm font-semibold uppercase tracking-wider text-slate-400 truncate">
                   {card.title}
                 </p>
-                <h2 className="text-3xl font-black text-slate-800 mt-1">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-800 mt-0.5 sm:mt-1">
                   {card.value}
                 </h2>
               </div>
-              <div className="text-blue-600 bg-blue-50 p-3 rounded-xl">
+              <div className="text-blue-600 bg-blue-50 p-2.5 sm:p-3 rounded-xl shrink-0 ml-2">
                 {card.icon}
               </div>
             </motion.div>
@@ -242,42 +248,52 @@ const AdminDashboard: React.FC = () => {
           animate="visible"
           variants={fadeInUp}
           custom={4}
-          className="w-full p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
+          className="w-full p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
         >
-          <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
-            <BarChart className="w-5 h-5 text-blue-600" />
-            <h2 className="font-bold text-slate-700">
+          <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2.5 sm:pb-3">
+            <BarChart className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0" />
+            <h2 className="text-sm sm:text-base font-bold text-slate-700 truncate">
               Weekly Performance Overview
             </h2>
           </div>
-          <div className="w-full h-[240px]">
+          <div className="w-full h-[200px] sm:h-[240px]">
             {weeklyTasksData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
                   data={weeklyTasksData}
-                  margin={{ left: -20, right: 10 }}
+                  margin={{ left: -25, right: 10, top: 5, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                  <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="#94a3b8"
+                    fontSize={11}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    stroke="#94a3b8"
+                    fontSize={11}
+                    allowDecimals={false}
+                    tickLine={false}
+                  />
                   <Tooltip />
                   <Line
                     type="monotone"
                     dataKey="tasks"
                     stroke="#2563eb"
-                    strokeWidth={3}
+                    strokeWidth={2.5}
                     dot={{
-                      r: 4,
+                      r: 3.5,
                       stroke: "#2563eb",
-                      strokeWidth: 2,
+                      strokeWidth: 1.5,
                       fill: "#fff",
                     }}
-                    activeDot={{ r: 6 }}
+                    activeDot={{ r: 5 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-full text-slate-400 italic text-sm">
+              <div className="flex items-center justify-center h-full text-slate-400 italic text-xs sm:text-sm">
                 No Performance Data
               </div>
             )}
@@ -290,45 +306,51 @@ const AdminDashboard: React.FC = () => {
             animate="visible"
             variants={fadeInUp}
             custom={5}
-            className="p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
+            className="p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
           >
-            <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
-              <Users className="w-5 h-5 text-emerald-500" />
-              <h2 className="font-bold text-slate-700">
+            <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2.5 sm:pb-3">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500 shrink-0" />
+              <h2 className="text-sm sm:text-base font-bold text-slate-700 truncate">
                 User Acquisition Metrics
               </h2>
             </div>
-            <div className="w-full h-[180px]">
+            <div className="w-full h-[160px] sm:h-[180px]">
               {userGrowthData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={userGrowthData}
-                    margin={{ left: -25, right: 10 }}
+                    margin={{ left: -30, right: 10, top: 5, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#94a3b8"
+                      fontSize={10}
+                      tickLine={false}
+                    />
                     <YAxis
                       stroke="#94a3b8"
-                      fontSize={11}
+                      fontSize={10}
                       allowDecimals={false}
+                      tickLine={false}
                     />
                     <Tooltip />
                     <Line
                       type="monotone"
                       dataKey="users"
                       stroke="#10b981"
-                      strokeWidth={3}
+                      strokeWidth={2.5}
                       dot={{
-                        r: 4,
+                        r: 3.5,
                         stroke: "#10b981",
-                        strokeWidth: 2,
+                        strokeWidth: 1.5,
                         fill: "#fff",
                       }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-slate-400 italic text-sm">
+                <div className="flex items-center justify-center h-full text-slate-400 italic text-xs sm:text-sm">
                   No Growth Data
                 </div>
               )}
@@ -340,46 +362,52 @@ const AdminDashboard: React.FC = () => {
             animate="visible"
             variants={fadeInUp}
             custom={6}
-            className="p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
+            className="p-3 sm:p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
           >
-            <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
-              <ProjectIcon className="w-5 h-5 text-amber-500" />
-              <h2 className="font-bold text-slate-700">
+            <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2.5 sm:pb-3">
+              <ProjectIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500 shrink-0" />
+              <h2 className="text-sm sm:text-base font-bold text-slate-700 truncate">
                 Project Fulfillment Track
               </h2>
             </div>
-            <div className="w-full h-[180px]">
+            <div className="w-full h-[160px] sm:h-[180px]">
               {completedProjectsData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={completedProjectsData}
-                    margin={{ left: -25, right: 10 }}
+                    margin={{ left: -30, right: 10, top: 5, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#94a3b8"
+                      fontSize={10}
+                      tickLine={false}
+                    />
                     <YAxis
                       stroke="#94a3b8"
-                      fontSize={11}
+                      fontSize={10}
                       allowDecimals={false}
+                      tickLine={false}
                     />
                     <Tooltip />
                     <Line
                       type="monotone"
                       dataKey="completed"
                       stroke="#f59e0b"
-                      strokeWidth={3}
+                      strokeWidth={2.5}
                       dot={{
-                        r: 4,
+                        r: 3.5,
                         stroke: "#f59e0b",
-                        strokeWidth: 2,
+                        strokeWidth: 1.5,
                         fill: "#fff",
                       }}
                     />
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-slate-400 italic text-sm">
-                  No Analytics Recorid
+                <div className="flex items-center justify-center h-full text-slate-400 italic text-xs sm:text-sm">
+                  No Analytics Recorded
                 </div>
               )}
             </div>
@@ -392,70 +420,75 @@ const AdminDashboard: React.FC = () => {
         animate="visible"
         variants={fadeInUp}
         custom={7}
-        className="p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
+        className="p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
       >
-        <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
-          <TasksIcon className="w-5 h-5 text-blue-600" strokeWidth={2} />
+        <h2 className="text-base sm:text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
+          <TasksIcon
+            className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0"
+            strokeWidth={2}
+          />
           Active Context Workloads
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-slate-100">
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50/70 text-slate-500 font-medium">
-              <tr>
-                <th className="px-4 py-3 text-left tracking-wide">
-                  Task Label
-                </th>
-                <th className="px-4 py-3 text-left tracking-wide">
-                  Owner Assignment
-                </th>
-                <th className="px-4 py-3 text-left tracking-wide">
-                  Lifecycle Stage
-                </th>
-                <th className="px-4 py-3 text-left tracking-wide">
-                  Target Deadline
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
-              {tasks.filter((t) => t.status === "in-progress").length > 0 ? (
-                tasks
-                  .filter((t) => t.status === "in-progress")
-                  .slice(0, 5)
-                  .map((task) => (
-                    <tr
-                      key={task._id}
-                      className="hover:bg-slate-50/50 transition duration-150"
-                    >
-                      <td className="px-4 py-3 font-semibold text-slate-800">
-                        {task.title}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {task.assignedTo?.name || "Unassigned"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/40">
-                          In Progress
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-slate-500">
-                        {task.deadline
-                          ? new Date(task.deadline).toLocaleDateString()
-                          : "N/A"}
-                      </td>
-                    </tr>
-                  ))
-              ) : (
+        <div className="overflow-x-auto rounded-xl border border-slate-100 -mx-4 sm:mx-0">
+          <div className="inline-block min-w-full align-middle">
+            <table className="min-w-full divide-y divide-slate-100 text-xs sm:text-sm">
+              <thead className="bg-slate-50/70 text-slate-500 font-medium">
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="px-4 py-8 text-center text-slate-400 italic"
-                  >
-                    No active pipelines matching criteria.
-                  </td>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Task Label
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Owner Assignment
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Lifecycle Stage
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Target Deadline
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
+                {tasks.filter((t) => t.status === "in-progress").length > 0 ? (
+                  tasks
+                    .filter((t) => t.status === "in-progress")
+                    .slice(0, 5)
+                    .map((task) => (
+                      <tr
+                        key={task._id}
+                        className="hover:bg-slate-50/50 transition duration-150"
+                      >
+                        <td className="px-3 sm:px-4 py-3 font-semibold text-slate-800 whitespace-nowrap max-w-[150px] truncate">
+                          {task.title}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-slate-600 whitespace-nowrap">
+                          {task.assignedTo?.name || "Unassigned"}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/40">
+                            In Progress
+                          </span>
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-slate-500 whitespace-nowrap">
+                          {task.deadline
+                            ? new Date(task.deadline).toLocaleDateString()
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-8 text-center text-slate-400 italic"
+                    >
+                      No active pipelines matching criteria.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </motion.div>
 
@@ -464,78 +497,84 @@ const AdminDashboard: React.FC = () => {
         animate="visible"
         variants={fadeInUp}
         custom={8}
-        className="p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
+        className="p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
       >
-        <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
-          <ProjectIcon className="w-5 h-5 text-blue-600" strokeWidth={2} />
+        <h2 className="text-base sm:text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
+          <ProjectIcon
+            className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0"
+            strokeWidth={2}
+          />
           Active Operations Streams
         </h2>
-        <div className="overflow-x-auto rounded-xl border border-slate-100">
-          <table className="min-w-full divide-y divide-slate-100 text-sm">
-            <thead className="bg-slate-50/70 text-slate-500 font-medium">
-              <tr>
-                <th className="px-4 py-3 text-left tracking-wide">
-                  Project Scope
-                </th>
-                <th className="px-4 py-3 text-left tracking-wide">
-                  Managing Executive
-                </th>
-                <th className="px-4 py-3 text-left tracking-wide">
-                  Operational Status
-                </th>
-                <th className="px-4 py-3 text-left tracking-wide">
-                  Target Timeline
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
-              {projects.filter((p) => p.status === "in-progress").length > 0 ? (
-                projects
-                  .filter((p) => p.status === "in-progress")
-                  .slice(0, 5)
-                  .map((project) => (
-                    <tr
-                      key={project._id}
-                      className="hover:bg-slate-50/50 transition duration-150"
-                    >
-                      <td className="px-4 py-3 font-semibold text-slate-800">
-                        {project.name}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {typeof project.manager === "object" &&
-                        "name" in project.manager
-                          ? project.manager.name
-                          : "N/A"}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/40">
-                          In Progress
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-slate-500">
-                        {project.deadline
-                          ? new Date(project.deadline).toLocaleDateString()
-                          : "N/A"}
-                      </td>
-                    </tr>
-                  ))
-              ) : (
+        <div className="overflow-x-auto rounded-xl border border-slate-100 -mx-4 sm:mx-0">
+          <div className="inline-block min-w-full align-middle">
+            <table className="min-w-full divide-y divide-slate-100 text-xs sm:text-sm">
+              <thead className="bg-slate-50/70 text-slate-500 font-medium">
                 <tr>
-                  <td
-                    colSpan={4}
-                    className="px-4 py-8 text-center text-slate-400 italic"
-                  >
-                    No operational branches in current context.
-                  </td>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Project Scope
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Managing Executive
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Operational Status
+                  </th>
+                  <th className="px-3 sm:px-4 py-3 text-left tracking-wide whitespace-nowrap">
+                    Target Timeline
+                  </th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
+                {projects.filter((p) => p.status === "in-progress").length >
+                0 ? (
+                  projects
+                    .filter((p) => p.status === "in-progress")
+                    .slice(0, 5)
+                    .map((project) => (
+                      <tr
+                        key={project._id}
+                        className="hover:bg-slate-50/50 transition duration-150"
+                      >
+                        <td className="px-3 sm:px-4 py-3 font-semibold text-slate-800 whitespace-nowrap max-w-[150px] truncate">
+                          {project.name}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-slate-600 whitespace-nowrap">
+                          {typeof project.manager === "object" &&
+                          "name" in project.manager
+                            ? project.manager.name
+                            : "N/A"}
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/40">
+                            In Progress
+                          </span>
+                        </td>
+                        <td className="px-3 sm:px-4 py-3 text-slate-500 whitespace-nowrap">
+                          {project.deadline
+                            ? new Date(project.deadline).toLocaleDateString()
+                            : "N/A"}
+                        </td>
+                      </tr>
+                    ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-8 text-center text-slate-400 italic"
+                    >
+                      No operational branches in current context.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <button
           onClick={() => navigate("/admin/project")}
-          className="mt-4 w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm transition active:scale-[0.98]"
+          className="mt-4 w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-sm transition active:scale-[0.98]"
         >
           View All Projects
         </button>
@@ -546,35 +585,40 @@ const AdminDashboard: React.FC = () => {
         animate="visible"
         variants={fadeInUp}
         custom={9}
-        className="p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
+        className="p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
       >
-        <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
-          <PlusCircle className="w-5 h-5 text-blue-600" strokeWidth={2} />
+        <h2 className="text-base sm:text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
+          <PlusCircle
+            className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 shrink-0"
+            strokeWidth={2}
+          />
           Quick Actions Console
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
           <button
             onClick={() => navigate("/admin/project")}
-            className="flex items-center justify-center sm:justify-start gap-3 px-5 py-3.5 bg-blue-50/50 text-blue-700 rounded-xl hover:bg-blue-100/70 border border-blue-100 transition active:scale-[0.98]"
+            className="flex items-center justify-center sm:justify-start gap-3 px-4 py-3 bg-blue-50/50 text-blue-700 rounded-xl hover:bg-blue-100/70 border border-blue-100 transition active:scale-[0.98]"
           >
-            <ProjectIcon width={20} height={20} stroke="#2563eb" />
-            <span className="font-semibold text-sm">Add Project</span>
+            <ProjectIcon width={18} height={18} stroke="#2563eb" />
+            <span className="font-semibold text-xs sm:text-sm">
+              Add Project
+            </span>
           </button>
 
           <button
             onClick={() => navigate("/admin/tasks")}
-            className="flex items-center justify-center sm:justify-start gap-3 px-5 py-3.5 bg-emerald-50/50 text-emerald-700 rounded-xl hover:bg-emerald-100/70 border border-emerald-100 transition active:scale-[0.98]"
+            className="flex items-center justify-center sm:justify-start gap-3 px-4 py-3 bg-emerald-50/50 text-emerald-700 rounded-xl hover:bg-emerald-100/70 border border-emerald-100 transition active:scale-[0.98]"
           >
-            <TasksIcon width={20} height={20} stroke="#16a34a" />
-            <span className="font-semibold text-sm">Add Task</span>
+            <TasksIcon width={18} height={18} stroke="#16a34a" />
+            <span className="font-semibold text-xs sm:text-sm">Add Task</span>
           </button>
 
           <button
             onClick={() => navigate("/admin/user")}
-            className="flex items-center justify-center sm:justify-start gap-3 px-5 py-3.5 bg-indigo-50/50 text-indigo-700 rounded-xl hover:bg-indigo-100/70 border border-indigo-100 transition active:scale-[0.98]"
+            className="flex items-center justify-center sm:justify-start gap-3 px-4 py-3 bg-indigo-50/50 text-indigo-700 rounded-xl hover:bg-indigo-100/70 border border-indigo-100 transition active:scale-[0.98]"
           >
-            <User width={20} height={20} stroke="blue" />
-            <span className="font-semibold text-sm">Add User</span>
+            <User width={18} height={18} stroke="blue" />
+            <span className="font-semibold text-xs sm:text-sm">Add User</span>
           </button>
         </div>
       </motion.div>

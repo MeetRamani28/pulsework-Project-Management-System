@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const TimerPopup: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { currentLog, loading } = useSelector(
-    (state: RootState) => state.workLogs
+    (state: RootState) => state.workLogs,
   );
   const { tasks } = useSelector((state: RootState) => state.tasks);
 
@@ -31,13 +31,12 @@ const TimerPopup: React.FC = () => {
     dispatch(getAllTasks());
   }, [dispatch]);
 
-  // live timer effect
   useEffect(() => {
     if (currentLog?.status === "running") {
       if (!intervalRef.current) {
         intervalRef.current = setInterval(
           () => setSeconds((prev) => prev + 1),
-          1000
+          1000,
         );
       }
     } else {
@@ -113,81 +112,82 @@ const TimerPopup: React.FC = () => {
             label: (t.project as { _id: string; name: string }).name,
             value: (t.project as { _id: string; name: string })._id,
           },
-        ])
+        ]),
     ).values(),
   ];
 
   return (
     <motion.div
-      className="h-screen w-full flex flex-col bg-gray-50"
+      className="min-h-screen w-full flex flex-col bg-gray-50 overflow-y-auto px-4 py-4 md:py-0"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Header */}
       <motion.div
-        className="bg-gradient-to-r from-blue-600 to-indigo-500 text-white py-4 px-6 flex justify-between items-center shadow-md"
+        className="bg-gradient-to-r from-blue-600 to-indigo-500 text-white py-3.5 px-5 rounded-2xl md:rounded-none flex justify-between items-center shadow-md w-full shrink-0"
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <h1 className="text-xl md:text-2xl font-bold tracking-wide">⏱ Timer</h1>
+        <h1 className="text-lg md:text-2xl font-bold tracking-wide">⏱ Timer</h1>
       </motion.div>
 
-      {/* Dropdowns */}
       <motion.div
-        className="p-6 flex flex-col md:flex-row gap-4 justify-center items-center"
+        className="w-full pt-6 px-2 flex flex-col sm:flex-row gap-3.5 justify-center items-center shrink-0"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
       >
-        <CustomDropdown
-          options={projectOptions}
-          selected={selectedProject}
-          onSelect={(val) => {
-            setSelectedProject(val);
-            setSelectedTask("");
-          }}
-          placeholder="Select Project"
-          disabled={!!currentLog && currentLog.status !== "stopped"}
-        />
-        <CustomDropdown
-          options={tasks
-            .filter(
-              (t) =>
-                t.project &&
-                typeof t.project !== "string" &&
-                t.project._id === selectedProject
-            )
-            .map((t) => ({ label: t.title, value: t._id }))}
-          selected={selectedTask}
-          onSelect={setSelectedTask}
-          placeholder="Select Task"
-          disabled={!!currentLog && currentLog.status !== "stopped"}
-        />
+        <div className="w-full sm:max-w-xs">
+          <CustomDropdown
+            options={projectOptions}
+            selected={selectedProject}
+            onSelect={(val) => {
+              setSelectedProject(val);
+              setSelectedTask("");
+            }}
+            placeholder="Select Project"
+            disabled={!!currentLog && currentLog.status !== "stopped"}
+          />
+        </div>
+        <div className="w-full sm:max-w-xs">
+          <CustomDropdown
+            options={tasks
+              .filter(
+                (t) =>
+                  t.project &&
+                  typeof t.project !== "string" &&
+                  t.project._id === selectedProject,
+              )
+              .map((t) => ({ label: t.title, value: t._id }))}
+            selected={selectedTask}
+            onSelect={setSelectedTask}
+            placeholder="Select Task"
+            disabled={!!currentLog && currentLog.status !== "stopped"}
+          />
+        </div>
       </motion.div>
 
-      {/* Timer Display */}
       <motion.div
-        className="flex-1 flex flex-col justify-center items-center"
+        className="flex-1 flex flex-col justify-center items-center my-auto py-8 w-full"
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
       >
         <motion.div
-          className="text-7xl md:text-8xl font-mono font-extrabold mb-8 text-gray-800"
-          animate={{ scale: [1, 1.05, 1] }}
+          className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl font-mono font-extrabold mb-8 text-gray-800 select-all text-center tracking-tight"
+          animate={{ scale: [1, 1.03, 1] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
         >
           {formatTime(seconds)}
         </motion.div>
 
-        {/* Buttons */}
-        <div className="flex flex-wrap gap-4 justify-center">
-          <AnimatePresence>
+        <div className="flex flex-col xs:flex-row flex-wrap gap-3 w-full max-w-[280px] xs:max-w-sm justify-center">
+          <AnimatePresence mode="popLayout">
             {!currentLog && (
               <motion.button
+                key="start-btn"
                 onClick={handleStart}
-                className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="px-6 sm:px-8 py-2.5 sm:py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-sm sm:text-base shadow-lg w-full xs:w-auto"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 disabled={loading}
               >
                 Start
@@ -195,10 +195,11 @@ const TimerPopup: React.FC = () => {
             )}
             {currentLog?.status === "running" && (
               <motion.button
+                key="pause-btn"
                 onClick={handlePause}
-                className="px-8 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-semibold shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="px-6 sm:px-8 py-2.5 sm:py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-semibold text-sm sm:text-base shadow-lg w-full xs:w-auto"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 disabled={loading}
               >
                 Pause
@@ -206,10 +207,11 @@ const TimerPopup: React.FC = () => {
             )}
             {currentLog?.status === "paused" && (
               <motion.button
+                key="resume-btn"
                 onClick={handleResume}
-                className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="px-6 sm:px-8 py-2.5 sm:py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-sm sm:text-base shadow-lg w-full xs:w-auto"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 disabled={loading}
               >
                 Resume
@@ -217,20 +219,22 @@ const TimerPopup: React.FC = () => {
             )}
             {currentLog && currentLog.status !== "stopped" && (
               <motion.button
+                key="stop-btn"
                 onClick={handleStop}
-                className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold shadow-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="px-6 sm:px-8 py-2.5 sm:py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold text-sm sm:text-base shadow-lg w-full xs:w-auto"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
                 disabled={loading}
               >
                 Stop
               </motion.button>
             )}
             <motion.button
+              key="cancel-btn"
               onClick={handleCancel}
-              className="px-8 py-3 bg-gray-400 hover:bg-gray-500 text-white rounded-xl font-semibold shadow-lg"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-gray-400 hover:bg-gray-500 text-white rounded-xl font-semibold text-sm sm:text-base shadow-lg w-full xs:w-auto"
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
               Cancel
             </motion.button>
