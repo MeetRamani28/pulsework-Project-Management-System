@@ -5,11 +5,7 @@ import {
 } from "@reduxjs/toolkit";
 import axios, { AxiosError } from "axios";
 import Cookies from "js-cookie";
-import type { RootState } from "../store/store";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-// ================== Types ==================
 export interface Session {
   startedAt: string;
   endedAt?: string;
@@ -57,36 +53,31 @@ const initialState: TimeLogState = {
   summaries: [],
 };
 
-// ================== Helper ==================
 const getAuthHeaders = () => {
   const token = Cookies.get("token");
-  return { Authorization: `Bearer ${token}` };
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-// ================== Async Thunks ==================
-
-// Start
 export const startLog = createAsyncThunk<
   TimeLog,
   string,
-  { rejectValue: string; state: RootState }
+  { rejectValue: string }
 >("timelog/startLog", async (taskId, { rejectWithValue }) => {
   try {
     const res = await axios.post(
-      `${API_URL}/timelogs/start/${taskId}`,
+      `/timelogs/start/${taskId}`,
       {},
-      { headers: getAuthHeaders() }
+      { headers: getAuthHeaders() },
     );
     return res.data as TimeLog;
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to start log"
+      error.response?.data?.message || "Failed to start log",
     );
   }
 });
 
-// Pause
 export const pauseLog = createAsyncThunk<
   TimeLog,
   string,
@@ -94,20 +85,19 @@ export const pauseLog = createAsyncThunk<
 >("timelog/pauseLog", async (id, { rejectWithValue }) => {
   try {
     const res = await axios.put(
-      `${API_URL}/timelogs/pause/${id}`,
+      `/timelogs/pause/${id}`,
       {},
-      { headers: getAuthHeaders() }
+      { headers: getAuthHeaders() },
     );
     return res.data as TimeLog;
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to pause log"
+      error.response?.data?.message || "Failed to pause log",
     );
   }
 });
 
-// Resume
 export const resumeLog = createAsyncThunk<
   TimeLog,
   string,
@@ -115,20 +105,19 @@ export const resumeLog = createAsyncThunk<
 >("timelog/resumeLog", async (id, { rejectWithValue }) => {
   try {
     const res = await axios.put(
-      `${API_URL}/timelogs/resume/${id}`,
+      `/timelogs/resume/${id}`,
       {},
-      { headers: getAuthHeaders() }
+      { headers: getAuthHeaders() },
     );
     return res.data as TimeLog;
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to resume log"
+      error.response?.data?.message || "Failed to resume log",
     );
   }
 });
 
-// Stop
 export const stopLog = createAsyncThunk<
   TimeLog,
   string,
@@ -136,130 +125,124 @@ export const stopLog = createAsyncThunk<
 >("timelog/stopLog", async (id, { rejectWithValue }) => {
   try {
     const res = await axios.put(
-      `${API_URL}/timelogs/stop/${id}`,
+      `/timelogs/stop/${id}`,
       {},
-      { headers: getAuthHeaders() }
+      { headers: getAuthHeaders() },
     );
     return res.data as TimeLog;
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to stop log"
+      error.response?.data?.message || "Failed to stop log",
     );
   }
 });
 
-// My Logs
 export const getMyLogs = createAsyncThunk<
   TimeLog[],
   void,
   { rejectValue: string }
 >("timelog/getMyLogs", async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_URL}/timelogs/me`, {
+    const res = await axios.get("/timelogs/me", {
       headers: getAuthHeaders(),
     });
     return res.data as TimeLog[];
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to fetch my logs"
+      error.response?.data?.message || "Failed to fetch my logs",
     );
   }
 });
 
-// All Logs
 export const getAllLogs = createAsyncThunk<
   TimeLog[],
   void,
   { rejectValue: string }
 >("timelog/getAllLogs", async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_URL}/timelogs/getAllLogs`, {
+    const res = await axios.get("/timelogs/getAllLogs", {
       headers: getAuthHeaders(),
     });
     return res.data as TimeLog[];
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to fetch logs"
+      error.response?.data?.message || "Failed to fetch logs",
     );
   }
 });
 
-// Logs by Task
 export const getLogsByTask = createAsyncThunk<
   TimeLog[],
   string,
   { rejectValue: string }
 >("timelog/getLogsByTask", async (taskId, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_URL}/timelogs/task/${taskId}`, {
+    const res = await axios.get(`/timelogs/task/${taskId}`, {
       headers: getAuthHeaders(),
     });
     return res.data as TimeLog[];
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to fetch task logs"
+      error.response?.data?.message || "Failed to fetch task logs",
     );
   }
 });
 
-// Log by ID
 export const getLogById = createAsyncThunk<
   TimeLog,
   string,
   { rejectValue: string }
 >("timelog/getLogById", async (id, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_URL}/timelogs/${id}`, {
+    const res = await axios.get(`/timelogs/${id}`, {
       headers: getAuthHeaders(),
     });
     return res.data as TimeLog;
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to fetch log"
+      error.response?.data?.message || "Failed to fetch log",
     );
   }
 });
 
-// Delete
 export const deleteLog = createAsyncThunk<
   string,
   string,
   { rejectValue: string }
 >("timelog/deleteLog", async (id, { rejectWithValue }) => {
   try {
-    await axios.delete(`${API_URL}/timelogs/delete/${id}`, {
+    await axios.delete(`/timelogs/delete/${id}`, {
       headers: getAuthHeaders(),
     });
     return id;
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to delete log"
+      error.response?.data?.message || "Failed to delete log",
     );
   }
 });
 
-// Daily Summary
 export const getDailySummary = createAsyncThunk<
   DailySummary,
   string | void,
   { rejectValue: string }
 >("timelog/getDailySummary", async (date, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_URL}/timelogs/summary`, {
+    const res = await axios.get("/timelogs/summary", {
       headers: getAuthHeaders(),
-      params: { date }, // optional
+      params: date ? { date } : {},
     });
     return res.data as DailySummary;
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to fetch daily summary"
+      error.response?.data?.message || "Failed to fetch daily summary",
     );
   }
 });
@@ -270,19 +253,18 @@ export const getAllSummaries = createAsyncThunk<
   { rejectValue: string }
 >("timelog/getAllSummaries", async (_, { rejectWithValue }) => {
   try {
-    const res = await axios.get(`${API_URL}/timelogs/summaries`, {
+    const res = await axios.get("/timelogs/summaries", {
       headers: getAuthHeaders(),
     });
     return res.data as DailySummary[];
   } catch (err) {
     const error = err as AxiosError<{ message: string }>;
     return rejectWithValue(
-      error.response?.data?.message || "Failed to fetch summaries"
+      error.response?.data?.message || "Failed to fetch summaries",
     );
   }
 });
 
-// ================== Slice ==================
 const timeLogSlice = createSlice({
   name: "timelog",
   initialState,
@@ -303,7 +285,6 @@ const timeLogSlice = createSlice({
       state.error = null;
     };
 
-    // Start
     builder
       .addCase(startLog.pending, (state) => {
         state.loading = true;
@@ -320,7 +301,6 @@ const timeLogSlice = createSlice({
         state.error = action.payload || "Failed to start log";
       });
 
-    // Pause
     builder
       .addCase(pauseLog.pending, (state) => {
         state.loading = true;
@@ -333,7 +313,6 @@ const timeLogSlice = createSlice({
         state.error = action.payload || null;
       });
 
-    // Resume
     builder
       .addCase(resumeLog.pending, (state) => {
         state.loading = true;
@@ -346,7 +325,6 @@ const timeLogSlice = createSlice({
         state.error = action.payload || null;
       });
 
-    // Stop
     builder
       .addCase(stopLog.pending, (state) => {
         state.loading = true;
@@ -359,7 +337,6 @@ const timeLogSlice = createSlice({
         state.error = action.payload || null;
       });
 
-    // Get My Logs
     builder
       .addCase(getMyLogs.pending, (state) => {
         state.loading = true;
@@ -374,7 +351,6 @@ const timeLogSlice = createSlice({
         state.error = action.payload || null;
       });
 
-    // Get All
     builder
       .addCase(getAllLogs.pending, (state) => {
         state.loading = true;
@@ -389,7 +365,6 @@ const timeLogSlice = createSlice({
         state.error = action.payload || null;
       });
 
-    // Logs by Task
     builder
       .addCase(getLogsByTask.pending, (state) => {
         state.loading = true;
@@ -404,7 +379,6 @@ const timeLogSlice = createSlice({
         state.error = action.payload || null;
       });
 
-    // Log by ID
     builder
       .addCase(getLogById.pending, (state) => {
         state.loading = true;
@@ -419,13 +393,11 @@ const timeLogSlice = createSlice({
         state.error = action.payload || null;
       });
 
-    // Delete
     builder.addCase(deleteLog.fulfilled, (state, action) => {
       state.logs = state.logs.filter((log) => log._id !== action.payload);
       if (state.currentLog?._id === action.payload) state.currentLog = null;
     });
 
-    // Daily Summary
     builder
       .addCase(getDailySummary.pending, (state) => {
         state.loading = true;
@@ -433,14 +405,13 @@ const timeLogSlice = createSlice({
       })
       .addCase(getDailySummary.fulfilled, (state, action) => {
         state.loading = false;
-        state.summary = action.payload; // { date, totalHours, formatted, taskCount }
+        state.summary = action.payload;
       })
       .addCase(getDailySummary.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || null;
       });
 
-    // All Summaries
     builder
       .addCase(getAllSummaries.pending, (state) => {
         state.loading = true;
@@ -451,7 +422,7 @@ const timeLogSlice = createSlice({
         (state, action: PayloadAction<DailySummary[]>) => {
           state.loading = false;
           state.summaries = action.payload;
-        }
+        },
       )
       .addCase(getAllSummaries.rejected, (state, action) => {
         state.loading = false;

@@ -6,9 +6,6 @@ import {
 import axios, { AxiosError } from "axios";
 import Cookies from "js-cookie";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-// 📌 Types
 export interface Notification {
   _id: string;
   user: string;
@@ -34,19 +31,21 @@ const initialState: NotificationState = {
   success: null,
 };
 
-// 📌 Thunks
+const getAuthHeaders = () => {
+  const token = Cookies.get("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export const getUserNotifications = createAsyncThunk<
   Notification[],
   string, // userId
   { rejectValue: string }
 >("notifications/getUserNotifications", async (userId, thunkAPI) => {
   try {
-    const token = Cookies.get("token");
-    const { data } = await axios.get(
-      `${API_URL}/notifications/user/${userId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    return data; // should return array of notifications
+    const { data } = await axios.get(`/notifications/user/${userId}`, {
+      headers: getAuthHeaders(),
+    });
+    return data; 
   } catch (err) {
     const error: AxiosError<{ message: string }> = err as AxiosError<{
       message: string;
@@ -61,11 +60,10 @@ export const markNotificationRead = createAsyncThunk<
   { rejectValue: string }
 >("notifications/markNotificationRead", async (id, thunkAPI) => {
   try {
-    const token = Cookies.get("token");
     await axios.patch(
-      `${API_URL}/notifications/${id}/read`,
+      `/notifications/${id}/read`,
       {},
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: getAuthHeaders() },
     );
     return { id };
   } catch (err) {
@@ -77,16 +75,15 @@ export const markNotificationRead = createAsyncThunk<
 });
 
 export const markAllNotificationsRead = createAsyncThunk<
-  string, // userId
+  string, 
   string,
   { rejectValue: string }
 >("notifications/markAllNotificationsRead", async (userId, thunkAPI) => {
   try {
-    const token = Cookies.get("token");
     await axios.patch(
-      `${API_URL}/notifications/user/${userId}/read`,
+      `/notifications/user/${userId}/read`,
       {},
-      { headers: { Authorization: `Bearer ${token}` } }
+      { headers: getAuthHeaders() },
     );
     return userId;
   } catch (err) {
@@ -103,9 +100,8 @@ export const deleteNotification = createAsyncThunk<
   { rejectValue: string }
 >("notifications/deleteNotification", async (id, thunkAPI) => {
   try {
-    const token = Cookies.get("token");
-    await axios.delete(`${API_URL}/notifications/delete/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    await axios.delete(`/notifications/delete/${id}`, {
+      headers: getAuthHeaders(),
     });
     return { id };
   } catch (err) {
@@ -116,7 +112,6 @@ export const deleteNotification = createAsyncThunk<
   }
 });
 
-// 📌 Slice
 const NotificationSlice = createSlice({
   name: "notifications",
   initialState,
@@ -129,7 +124,6 @@ const NotificationSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Get all
     builder.addCase(getUserNotifications.pending, (state) => {
       state.loading = true;
       state.error = null;
@@ -139,24 +133,22 @@ const NotificationSlice = createSlice({
       (state, action: PayloadAction<Notification[]>) => {
         state.loading = false;
         state.notifications = action.payload;
-      }
+      },
     );
     builder.addCase(getUserNotifications.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload || "Failed to fetch notifications";
     });
 
-    // Mark single as read
     builder.addCase(
       markNotificationRead.fulfilled,
       (state, action: PayloadAction<{ id: string }>) => {
         state.notifications = state.notifications.map((n) =>
-          n._id === action.payload.id ? { ...n, isRead: true } : n
+          n._id === action.payload.id ? { ...n, isRead: true } : n,
         );
-      }
+      },
     );
 
-    // Mark all as read
     builder.addCase(markAllNotificationsRead.fulfilled, (state) => {
       state.notifications = state.notifications.map((n) => ({
         ...n,
@@ -164,14 +156,13 @@ const NotificationSlice = createSlice({
       }));
     });
 
-    // Delete notification
     builder.addCase(
       deleteNotification.fulfilled,
       (state, action: PayloadAction<{ id: string }>) => {
         state.notifications = state.notifications.filter(
-          (n) => n._id !== action.payload.id
+          (n) => n._id !== action.payload.id,
         );
-      }
+      },
     );
   },
 });

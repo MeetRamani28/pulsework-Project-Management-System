@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store/store";
@@ -13,27 +11,38 @@ import {
   clearTimeLogError,
   clearTimeLogSuccess,
 } from "../../Reducers/TimeLogsReducers";
-import { Loader2, Play, Pause, Square as Stop, Trash2 } from "lucide-react";
-import toast from "react-hot-toast";
+import {
+  Loader2,
+  Play,
+  Pause,
+  Square as Stop,
+  Trash2,
+  AlertTriangle,
+  Search,
+} from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 
 const AdminWorkLogs: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { logs, loading, error, success } = useSelector(
-    (state: RootState) => state.workLogs
+    (state: RootState) => state.workLogs,
   );
 
   const [filter, setFilter] = useState<string>("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const [logToDelete, setLogToDelete] = useState<string | null>(null);
+  const [isDeletingLocal, setIsDeletingLocal] = useState(false);
 
   const handlePause = async (logId: string) => {
     setActionLoading(logId);
     const result = await dispatch(pauseLog(logId));
     setActionLoading(null);
     if (pauseLog.fulfilled.match(result)) {
-      toast.success("Task paused successfully");
+      toast.success("Task execution paused ✨");
     } else {
-      toast.error(result.payload || "Failed to pause task");
+      toast.error((result.payload as string) || "Failed to pause task");
     }
   };
 
@@ -42,9 +51,9 @@ const AdminWorkLogs: React.FC = () => {
     const result = await dispatch(resumeLog(logId));
     setActionLoading(null);
     if (resumeLog.fulfilled.match(result)) {
-      toast.success("Task resumed successfully");
+      toast.success("Task execution resumed 🚀");
     } else {
-      toast.error(result.payload || "Failed to resume task");
+      toast.error((result.payload as string) || "Failed to resume task");
     }
   };
 
@@ -53,37 +62,38 @@ const AdminWorkLogs: React.FC = () => {
     const result = await dispatch(stopLog(logId));
     setActionLoading(null);
     if (stopLog.fulfilled.match(result)) {
-      toast.success("Task stopped successfully");
+      toast.success("Task clock stopped successfully ⏱️");
     } else {
-      toast.error(result.payload || "Failed to stop task");
+      toast.error((result.payload as string) || "Failed to stop task");
     }
   };
 
   const handleRestart = async (logId: string) => {
     setActionLoading(logId);
-    const result = await dispatch(resumeLog(logId)); // For stopped tasks
+    const result = await dispatch(resumeLog(logId));
     setActionLoading(null);
     if (resumeLog.fulfilled.match(result)) {
-      toast.success("Task restarted successfully");
+      toast.success("Task clock re-initialized 🔄");
     } else {
-      toast.error(result.payload || "Failed to restart task");
+      toast.error((result.payload as string) || "Failed to restart task");
     }
   };
 
-  const handleDelete = async (logId: string) => {
-    if (confirm("Are you sure you want to delete this log?")) {
-      setActionLoading(logId);
-      const result = await dispatch(deleteLog(logId));
-      setActionLoading(null);
+  const confirmDelete = async () => {
+    if (logToDelete) {
+      setIsDeletingLocal(true);
+      const result = await dispatch(deleteLog(logToDelete));
+      setIsDeletingLocal(false);
+      setLogToDelete(null);
+
       if (deleteLog.fulfilled.match(result)) {
-        toast.success("Task deleted successfully");
+        toast.success("Work log erased successfully 🗑️");
       } else {
-        toast.error(result.payload || "Failed to delete task");
+        toast.error((result.payload as string) || "Failed to delete task");
       }
     }
   };
 
-  // Fetch logs on mount
   useEffect(() => {
     dispatch(getAllLogs());
   }, [dispatch]);
@@ -105,120 +115,122 @@ const AdminWorkLogs: React.FC = () => {
     (log) =>
       (log.task?.title ?? "").toLowerCase().includes(filter.toLowerCase()) ||
       (log.project?.name ?? "").toLowerCase().includes(filter.toLowerCase()) ||
-      (log.user?.name ?? "").toLowerCase().includes(filter.toLowerCase())
+      (log.user?.name ?? "").toLowerCase().includes(filter.toLowerCase()),
   );
 
-  if (loading)
+  if (loading && !logToDelete)
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="animate-spin text-blue-600" size={48} />
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500 text-sm font-medium min-h-[60vh]">
+        <Loader2 className="animate-spin text-blue-600 w-8 h-8 mb-2" />
+        <span>Synchronizing temporal engine arrays...</span>
       </div>
     );
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold text-blue-700">Admin WorkLogs</h1>
+    <div className="p-4 sm:p-6 space-y-6 bg-slate-50/50 min-h-screen">
+      <Toaster position="bottom-right" />
 
-      <input
-        type="text"
-        placeholder="Search by task, project, or user..."
-        className="w-full md:w-1/2 px-4 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-      />
+      <div>
+        <h1 className="text-2xl font-black text-slate-800">
+          Time Analytics Registry
+        </h1>
+        <p className="text-slate-500 text-sm mt-0.5">
+          Real-time surveillance and overrides on active session workloads
+        </p>
+      </div>
+
+      <div className="relative w-full md:w-1/2 flex items-center bg-white border border-slate-200 rounded-xl px-3 focus-within:border-blue-500/50 transition shadow-sm">
+        <Search className="w-4 h-4 text-slate-400 shrink-0 ml-1" />
+        <input
+          type="text"
+          placeholder="Filter logs by task, project or operator identifier..."
+          className="w-full bg-transparent text-sm py-2.5 px-2 outline-none text-slate-800 placeholder-slate-400 font-medium"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+        />
+      </div>
 
       {filteredLogs.length === 0 ? (
-        <div className="text-gray-500 italic mt-10">No logs found.</div>
+        <div className="bg-white border border-dashed rounded-2xl p-12 text-slate-400 text-center italic text-sm shadow-sm">
+          No records matching index parameters found.
+        </div>
       ) : (
-        <div className="overflow-x-auto mt-4">
-          <table className="min-w-full bg-white rounded-xl shadow overflow-hidden">
-            <thead className="bg-blue-50">
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 shadow-sm bg-white">
+          <table className="min-w-full divide-y divide-slate-100 text-sm">
+            <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider text-[11px]">
               <tr>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-600">
-                  Task
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-600">
-                  Project
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-600">
-                  Assigned To
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-600">
-                  Start
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-600">
-                  End
-                </th>
-                <th className="py-3 px-4 text-left text-sm font-medium text-gray-600">
-                  Status
-                </th>
-                <th className="py-3 px-4 text-center text-sm font-medium text-gray-600">
-                  Actions
-                </th>
+                <th className="py-3 px-4 text-left">Task Node</th>
+                <th className="py-3 px-4 text-left">Project Scope</th>
+                <th className="py-3 px-4 text-left">Operator Allocation</th>
+                <th className="py-3 px-4 text-left">Start Time</th>
+                <th className="py-3 px-4 text-left">End Bound</th>
+                <th className="py-3 px-4 text-left">Status</th>
+                <th className="py-3 px-4 text-center">Runtime Controls</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100 bg-white text-slate-700 font-medium">
               <AnimatePresence>
                 {filteredLogs.map((log: TimeLog) => (
                   <motion.tr
                     key={log._id}
-                    className="border-b hover:bg-gray-50"
-                    initial={{ opacity: 0, y: 10 }}
+                    className="hover:bg-slate-50/50 transition duration-150"
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.15 }}
                   >
-                    <td className="py-3 px-4 text-gray-700">
-                      {log.task?.title ?? "-"}
+                    <td className="py-3.5 px-4 font-bold text-slate-800 max-w-[180px] truncate">
+                      {log.task?.title ?? "—"}
                     </td>
-                    <td className="py-3 px-4 text-gray-700">
-                      {log.project?.name ?? "-"}
+                    <td className="py-3.5 px-4 text-slate-600 max-w-[150px] truncate">
+                      {log.project?.name ?? "—"}
                     </td>
-                    <td className="py-3 px-4 text-gray-700">
-                      {log.user?.name ?? "-"}
+                    <td className="py-3.5 px-4 text-slate-700 font-semibold truncate">
+                      {log.user?.name ?? "—"}
                     </td>
-                    <td className="py-3 px-4 text-gray-500">
+                    <td className="py-3.5 px-4 text-slate-400 text-xs font-mono">
                       {log.startTime
                         ? new Date(log.startTime).toLocaleString()
-                        : "-"}
+                        : "—"}
                     </td>
-                    <td className="py-3 px-4 text-gray-500">
+                    <td className="py-3.5 px-4 text-slate-400 text-xs font-mono">
                       {log.endTime
                         ? new Date(log.endTime).toLocaleString()
-                        : "-"}
+                        : "—"}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3.5 px-4">
                       {log.status === "running" && (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/30 animate-pulse">
                           Running
                         </span>
                       )}
                       {log.status === "paused" && (
-                        <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/30">
                           Paused
                         </span>
                       )}
                       {log.status === "stopped" && (
-                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/30">
                           Stopped
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-4 flex justify-center gap-2">
+
+                    <td className="py-3.5 px-4 flex justify-center gap-1.5 flex-wrap min-w-[140px]">
                       {log.status === "running" && (
                         <>
                           <ActionButton
                             loading={actionLoading === log._id}
                             onClick={() => handlePause(log._id)}
                             color="yellow"
-                            icon={<Pause size={16} />}
+                            icon={<Pause size={14} />}
                             text="Pause"
                           />
                           <ActionButton
                             loading={actionLoading === log._id}
                             onClick={() => handleStop(log._id)}
                             color="red"
-                            icon={<Stop size={16} />}
+                            icon={<Stop size={14} />}
                             text="Stop"
                           />
                         </>
@@ -230,14 +242,14 @@ const AdminWorkLogs: React.FC = () => {
                             loading={actionLoading === log._id}
                             onClick={() => handleResume(log._id)}
                             color="green"
-                            icon={<Play size={16} />}
+                            icon={<Play size={14} />}
                             text="Resume"
                           />
                           <ActionButton
                             loading={actionLoading === log._id}
                             onClick={() => handleStop(log._id)}
                             color="red"
-                            icon={<Stop size={16} />}
+                            icon={<Stop size={14} />}
                             text="Stop"
                           />
                         </>
@@ -248,16 +260,16 @@ const AdminWorkLogs: React.FC = () => {
                           loading={actionLoading === log._id}
                           onClick={() => handleRestart(log._id)}
                           color="green"
-                          icon={<Play size={16} />}
+                          icon={<Play size={14} />}
                           text="Resume"
                         />
                       )}
 
                       <ActionButton
                         loading={actionLoading === log._id}
-                        onClick={() => handleDelete(log._id)}
+                        onClick={() => setLogToDelete(log._id)}
                         color="red-light"
-                        icon={<Trash2 size={16} />}
+                        icon={<Trash2 size={14} />}
                         text="Delete"
                       />
                     </td>
@@ -268,15 +280,60 @@ const AdminWorkLogs: React.FC = () => {
           </table>
         </div>
       )}
+
+      <AnimatePresence>
+        {logToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => !isDeletingLocal && setLogToDelete(null)}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm relative z-10 text-center"
+            >
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600 mb-3 border border-red-100">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-base font-bold text-slate-800">
+                Purge Operational Log
+              </h3>
+              <p className="text-slate-500 text-sm mt-1.5 leading-relaxed">
+                Are you absolutely certain you want to destroy this time
+                tracking record? This structural wipe out cannot be reversed.
+              </p>
+              <div className="flex gap-2.5 mt-5 border-t border-slate-50 pt-4">
+                <button
+                  onClick={() => setLogToDelete(null)}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                  disabled={isDeletingLocal}
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition active:scale-95"
+                  disabled={isDeletingLocal}
+                >
+                  {isDeletingLocal ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Confirm Purge"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
 
 export default AdminWorkLogs;
 
-// ----------------------
-// Helper Action Button
-// ----------------------
 interface ActionButtonProps {
   loading: boolean;
   onClick: () => void;
@@ -293,19 +350,22 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   text,
 }) => {
   const colors = {
-    green: "bg-green-100 text-green-700",
-    yellow: "bg-yellow-100 text-yellow-700",
-    red: "bg-red-100 text-red-700",
-    "red-light": "bg-red-50 text-red-500",
+    green:
+      "bg-emerald-50 text-emerald-700 hover:bg-emerald-100/80 border border-emerald-200/30",
+    yellow:
+      "bg-amber-50 text-amber-700 hover:bg-amber-100/80 border border-amber-200/30",
+    red: "bg-rose-50 text-rose-700 hover:bg-rose-100/80 border border-rose-200/30",
+    "red-light":
+      "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/30",
   };
   return (
     <button
       onClick={onClick}
       disabled={loading}
-      className={`px-3 py-1 rounded flex items-center gap-1 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed ${colors[color]}`}
+      className={`px-2.5 py-1.5 rounded-xl flex items-center gap-1 font-bold text-xs shadow-sm transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${colors[color]}`}
     >
-      {loading ? <Loader2 className="animate-spin" size={16} /> : icon}
-      {text}
+      {loading ? <Loader2 className="animate-spin w-3.5 h-3.5" /> : icon}
+      <span className="hidden sm:block">{text}</span>
     </button>
   );
 };

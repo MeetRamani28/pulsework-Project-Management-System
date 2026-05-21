@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { type AppDispatch, type RootState } from "../../store/store";
@@ -10,8 +8,8 @@ import {
   clearUserSuccess,
 } from "../../Reducers/UserReducers";
 import { toast } from "sonner";
-import { Shield } from "lucide-react";
-import { User as UserIcon } from "lucide-react"; // fallback icon
+import { Shield, Loader2 } from "lucide-react";
+import { User as UserIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { EditAnimatedSquare } from "../../Icons/EditAnimated";
 import { motion } from "framer-motion";
@@ -24,8 +22,8 @@ const cardVariant = {
 };
 
 const inputVariant = {
-  hover: { scale: 1.01, transition: { duration: 0.2 } },
-  focus: { scale: 1.02, transition: { duration: 0.2 } },
+  hover: { scale: 1.005, transition: { duration: 0.2 } }, // મોબાઇલ ઝૂમિંગ કંટ્રોલ કરવા સહેજ ઓછું કર્યું
+  focus: { scale: 1.01, transition: { duration: 0.2 } },
 };
 
 const panelVariant = {
@@ -52,7 +50,7 @@ export interface User {
 const AdminProfile: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { currentUser, loading, error, success } = useSelector(
-    (state: RootState) => state.users
+    (state: RootState) => state.users,
   );
   const navigate = useNavigate();
 
@@ -68,10 +66,18 @@ const AdminProfile: React.FC = () => {
   useEffect(() => {
     if (currentUser) {
       setUserData(currentUser);
-      const url = currentUser.profilePicture
-        ? `${import.meta.env.VITE_API_URL}/${currentUser.profilePicture}`
-        : null;
-      setProfilePreview(url);
+
+      if (currentUser.profilePicture) {
+        if (currentUser.profilePicture.startsWith("http")) {
+          setProfilePreview(currentUser.profilePicture);
+        } else {
+          setProfilePreview(
+            `${import.meta.env.VITE_API_URL}/${currentUser.profilePicture}`,
+          );
+        }
+      } else {
+        setProfilePreview(null);
+      }
     }
   }, [currentUser]);
 
@@ -81,9 +87,10 @@ const AdminProfile: React.FC = () => {
       dispatch(clearUserError());
     }
     if (success) {
-      toast.success("Profile updated successfully");
+      toast.success("Profile updated successfully ✨");
       dispatch(clearUserSuccess());
       setIsEditing(false);
+      setProfileFile(null);
     }
   }, [error, success, dispatch]);
 
@@ -104,41 +111,52 @@ const AdminProfile: React.FC = () => {
       toast.error("Name is required");
       return;
     }
+
     const formData = new FormData();
+
     Object.entries(userData).forEach(([key, value]) => {
-      if (value !== undefined && key !== "profilePicture") {
-        formData.append(key, value as string);
+      if (
+        value !== undefined &&
+        key !== "profilePicture" &&
+        key !== "roles" &&
+        key !== "email"
+      ) {
+        formData.append(key, String(value).trim());
       }
     });
+
     if (profileFile) {
       formData.append("profilePicture", profileFile);
     }
+
     dispatch(updateMyProfile(formData));
   };
 
   const getRoleBadgeColor = (role?: string) => {
-    switch (role) {
+    switch (role?.toLowerCase()) {
       case "admin":
-        return "bg-red-100 text-red-700";
-      case "project":
+        return "bg-red-50 text-red-700 border-red-200/50";
       case "manager":
-        return "bg-blue-100 text-blue-700";
+        return "bg-blue-50 text-blue-700 border-blue-200/50";
       default:
-        return "bg-gray-100 text-gray-700";
+        return "bg-slate-50 text-slate-700 border-slate-200/50";
     }
   };
 
-  if (loading || !currentUser) {
+  if (loading && !currentUser) {
     return (
-      <div className="p-6 flex justify-center items-center min-h-[80vh]">
-        <div className="text-blue-600">Loading profile...</div>
+      <div className="p-6 flex flex-col justify-center items-center min-h-[70vh] text-slate-500 text-sm font-medium">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
+        <span>Loading secure profile...</span>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gradient-to-br from-blue-50 via-white to-indigo-50 min-h-full">
-      <h1 className="text-3xl font-bold mb-6 text-blue-800">My Profile</h1>
+    <div className="p-4 sm:p-6 bg-gradient-to-br from-blue-50 via-white to-indigo-50 min-h-full">
+      <h1 className="text-2xl sm:text-3xl font-black mb-6 text-slate-800">
+        My Profile
+      </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left / Main Panel */}
@@ -148,34 +166,26 @@ const AdminProfile: React.FC = () => {
           animate="visible"
           variants={cardVariant}
         >
-          {/* Profile Card */}
-          <motion.div
-            className="bg-white p-6 rounded-lg shadow space-y-4"
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-blue-800">
-                Profile Information
+          {/* Profile Details Container */}
+          <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/60 shadow-sm space-y-6">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+              <h2 className="text-lg font-bold text-slate-700">
+                Identity & Access Metadata
               </h2>
               {!isEditing && (
                 <button
-                  className="text-blue-700 px-3 py-1 rounded"
+                  className="text-blue-600 hover:text-blue-700 p-1 rounded-lg hover:bg-slate-50 transition"
                   onClick={() => setIsEditing(true)}
+                  aria-label="Edit profile"
                 >
                   <EditAnimatedSquare />
                 </button>
               )}
             </div>
 
-            {/* Profile picture */}
-            <motion.div
-              className="flex items-center space-x-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.5 }}
-            >
-              <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-2xl font-bold text-white">
+            {/* Profile Avatar Segment */}
+            <div className="flex items-center gap-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+              <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-200 border border-slate-300 flex items-center justify-center font-bold text-white shrink-0 shadow-inner">
                 {profilePreview ? (
                   <img
                     src={profilePreview}
@@ -183,176 +193,190 @@ const AdminProfile: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <UserIcon size={32} className="text-gray-400" />
+                  <UserIcon size={28} className="text-slate-400" />
                 )}
               </div>
-              <div>
-                <div className="text-lg font-semibold text-gray-800">
-                  {userData.name}
-                </div>
-                <div className="text-gray-600">{userData.email}</div>
-                <div className="flex space-x-2 mt-1">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-bold text-slate-800 truncate">
+                  {currentUser?.name}
+                </h3>
+                <p className="text-slate-500 text-sm truncate">
+                  {currentUser?.email}
+                </p>
+                <div className="flex mt-1.5">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-medium ${getRoleBadgeColor(
-                      userData.roles
-                    )}`}
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold uppercase border tracking-wider ${getRoleBadgeColor(currentUser?.roles)}`}
                   >
-                    <Shield className="inline w-3 h-3 mr-1" />
-                    {userData.roles}
+                    <Shield className="w-3 h-3 mr-1 shrink-0" />
+                    {currentUser?.roles}
                   </span>
                 </div>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Editable / Readonly fields */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Fields Grid Component */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { label: "Full Name", field: "name", type: "text" },
-                { label: "Email", field: "email", type: "email", disabled: true },
-                { label: "Role", field: "roles", type: "text" },
-                { label: "Phone", field: "phone", type: "text" },
-                { label: "Job Title", field: "jobTitle", type: "text" },
-                { label: "Department", field: "department", type: "text" },
-                { label: "Location", field: "location", type: "text" },
-              ].map(({ label, field, type, disabled }) => (
-                <motion.div
-                  key={field}
-                  variants={inputVariant}
-                  whileHover="hover"
-                  whileFocus="focus"
-                >
-                  <label className="block text-gray-700 font-medium mb-1">
-                    {label}
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type={type}
-                      value={
-                        userData[field as keyof User] !== undefined
-                          ? String(userData[field as keyof User])
-                          : ""
-                      }
-                      onChange={(e) =>
-                        handleChange(field as keyof User, e.target.value)
-                      }
-                      disabled={disabled}
-                      className="w-full border border-blue-200 rounded p-2 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <div className="p-2 bg-gray-50 rounded border border-gray-200">
-                      {userData[field as keyof User]}
-                    </div>
-                  )}
-                </motion.div>
-              ))}
+                {
+                  label: "Email Address",
+                  field: "email",
+                  type: "email",
+                  disabled: true,
+                },
+                {
+                  label: "Account Role Permission",
+                  field: "roles",
+                  type: "text",
+                  disabled: true,
+                }, 
+                { label: "Contact Phone", field: "phone", type: "text" },
+                { label: "Job Designation", field: "jobTitle", type: "text" },
+                {
+                  label: "Department Branch",
+                  field: "department",
+                  type: "text",
+                },
+                {
+                  label: "Workplace Location",
+                  field: "location",
+                  type: "text",
+                },
+              ].map(({ label, field, type, disabled }) => {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                const isFieldDisabled = disabled || !isEditing;
+                return (
+                  <motion.div
+                    key={field}
+                    variants={inputVariant}
+                    whileHover={isEditing ? "hover" : undefined}
+                  >
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                      {label}
+                    </label>
+                    {isEditing ? (
+                      <input
+                        type={type}
+                        value={
+                          userData[field as keyof User] !== undefined
+                            ? String(userData[field as keyof User])
+                            : ""
+                        }
+                        onChange={(e) =>
+                          handleChange(field as keyof User, e.target.value)
+                        }
+                        disabled={disabled}
+                        className="w-full border border-slate-200 bg-white disabled:bg-slate-50 disabled:text-slate-400 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition text-slate-800 font-medium"
+                      />
+                    ) : (
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-semibold text-slate-700 min-h-[46px] flex items-center">
+                        {String(userData[field as keyof User] || "—")}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
 
-              {/* Profile Upload */}
+              {/* Profile Attachment Block */}
               {isEditing && (
-                <motion.div
-                  className="col-span-1 md:col-span-2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                >
-                  <label className="block text-gray-700 font-medium mb-1">
-                    Profile Picture
+                <div className="col-span-1 sm:col-span-2 bg-blue-50/30 border border-dashed border-blue-200 p-4 rounded-xl">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-blue-600 mb-1">
+                    Upload Profile Media Box
                   </label>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/png, image/jpeg, image/jpg"
                     onChange={(e) =>
                       handleProfileChange(
-                        e.target.files ? e.target.files[0] : null
+                        e.target.files ? e.target.files[0] : null,
                       )
                     }
-                    className="w-full"
+                    className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition cursor-pointer"
                   />
-                </motion.div>
+                </div>
               )}
             </div>
 
-            {/* Action Buttons */}
+            {/* Operational Form Action Controls */}
             {isEditing && (
-              <motion.div
-                className="flex space-x-3 mt-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                <motion.button
+              <div className="flex gap-3 pt-2 border-t border-slate-100">
+                <button
                   onClick={handleSave}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center h-10 bg-blue-600 pr-4 text-white rounded"
+                  disabled={loading}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold text-sm rounded-xl shadow-sm transition active:scale-95"
                 >
-                  <SaveIcon height={20} stroke="white" />
-                  Save
-                </motion.button>
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <SaveIcon height={16} stroke="white" />
+                  )}
+                  <span>Save Profile</span>
+                </button>
 
-                <motion.button
-                  onClick={() => setIsEditing(false)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center h-10 bg-red-600 pr-4 text-white rounded"
+                <button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setUserData(currentUser || {});
+                  }}
+                  disabled={loading}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-50 text-slate-700 font-semibold text-sm rounded-xl transition active:scale-95"
                 >
-                  <CancelIcon height={20} stroke="white" />
-                  Cancel
-                </motion.button>
-              </motion.div>
+                  <CancelIcon height={16} stroke="#334155" />
+                  <span>Cancel changes</span>
+                </button>
+              </div>
             )}
-          </motion.div>
+          </div>
         </motion.div>
 
-        {/* Right / Summary Panel */}
+        {/* Right / Quick Navigation Summary Panel */}
         <motion.div
           className="space-y-4"
           initial="hidden"
           animate="visible"
           variants={panelVariant}
         >
-          {/* Quick Actions */}
-          <motion.div
-            className="bg-white p-4 rounded-lg shadow space-y-2"
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-lg font-semibold text-blue-800">
-              Quick Actions
+          {/* Quick Actions Panel */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-3">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Terminal Shortcuts
             </h2>
             <button
               onClick={() => navigate("/admin/project")}
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="w-full bg-slate-800 hover:bg-slate-900 text-white text-sm font-semibold px-4 py-3 rounded-xl shadow-sm transition active:scale-[0.98]"
             >
-              View Projects
+              View All Projects
             </button>
             <button
               onClick={() => navigate("/admin")}
-              className="w-full border border-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-50"
+              className="w-full border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-semibold px-4 py-3 rounded-xl transition active:scale-[0.98]"
             >
-              Dashboard
+              Return Dashboard
             </button>
-          </motion.div>
+          </div>
 
-          {/* System Info */}
-          <motion.div
-            className="bg-white p-4 rounded-lg shadow space-y-2"
-            whileHover={{ scale: 1.02 }}
-            transition={{ duration: 0.3 }}
-          >
-            <h2 className="text-lg font-semibold text-blue-800">System Info</h2>
-            <div className="text-sm text-gray-700 space-y-1">
-              <div>
-                <span className="font-medium">Platform:</span> PulseWork
+          {/* System Info Panel */}
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm space-y-3">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-1">
+              System Core Diagnostics
+            </h2>
+            <div className="text-sm text-slate-600 space-y-2 font-medium">
+              <div className="flex justify-between border-b border-slate-50 pb-1.5">
+                <span className="text-slate-400">Environment:</span>{" "}
+                <span>Production Node</span>
               </div>
-              <div>
-                <span className="font-medium">Version:</span> v1.0.0
+              <div className="flex justify-between border-b border-slate-50 pb-1.5">
+                <span className="text-slate-400">Engine Build:</span>{" "}
+                <span>v1.0.0 Stable</span>
               </div>
-              <div>
-                <span className="font-medium">User ID:</span>{" "}
-                {userData._id?.slice(0, 8)}...
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Node Identifier:</span>{" "}
+                <span className="bg-slate-100 font-mono px-2 py-0.5 rounded text-xs text-slate-700">
+                  {currentUser?._id?.slice(0, 10)}
+                </span>
               </div>
             </div>
-          </motion.div>
+          </div>
         </motion.div>
       </div>
     </div>

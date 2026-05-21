@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
@@ -27,14 +25,13 @@ import {
   subDays,
 } from "date-fns";
 
-// ✅ Import async thunks
 import { getAllProjects } from "../../Reducers/ProjectReducers";
 import { getAllTasks } from "../../Reducers/TaskReducers";
 import { getAllUsers } from "../../Reducers/UserReducers";
 import { getCurrentUser } from "../../Reducers/UserReducers";
 import { User } from "../../Icons/User";
+import { Loader2 } from "lucide-react";
 
-// Interfaces for chart data
 interface TaskChartData {
   name: string;
   tasks: number;
@@ -48,18 +45,17 @@ interface ProjectCompletionData {
   completed: number;
 }
 
-// Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { delay: i * 0.2, duration: 0.6 },
+    transition: { delay: i * 0.1, duration: 0.5 }, // એનિમશેન સહેજ ફાસ્ટ અને સ્મૂથ કર્યું
   }),
 };
 
 const cardHover = {
-  hover: { scale: 1.05, transition: { duration: 0.3 } },
+  hover: { scale: 1.02, transition: { duration: 0.2 } }, // મોબાઇલ પર અચાનક ઝૂમ અટકાવવા સ્કેલ સહેજ ઓછો કર્યો
 };
 
 const AdminDashboard: React.FC = () => {
@@ -68,13 +64,13 @@ const AdminDashboard: React.FC = () => {
 
   const { user } = useSelector((state: RootState) => state.auth);
   const { projects, loading: projectLoading } = useSelector(
-    (state: RootState) => state.projects
+    (state: RootState) => state.projects,
   );
   const { tasks, loading: taskLoading } = useSelector(
-    (state: RootState) => state.tasks
+    (state: RootState) => state.tasks,
   );
   const { users, loading: userLoading } = useSelector(
-    (state: RootState) => state.users
+    (state: RootState) => state.users,
   );
 
   useEffect(() => {
@@ -88,7 +84,6 @@ const AdminDashboard: React.FC = () => {
   const taskCount = tasks?.length || 0;
   const userCount = users?.length || 0;
 
-  // Weekly Tasks (last 7 days)
   const weeklyTasksData: TaskChartData[] = useMemo(() => {
     const today = new Date();
     const last7Days = Array.from({ length: 7 }).map((_, i) => {
@@ -96,75 +91,74 @@ const AdminDashboard: React.FC = () => {
       return { name: format(date, "EEE"), date, tasks: 0 };
     });
 
-    tasks.forEach((task) => {
-      const taskDate = task.createdAt ? new Date(task.createdAt) : null;
-      if (taskDate) {
-        const dayObj = last7Days.find(
-          (d) => format(d.date, "yyyy-MM-dd") === format(taskDate, "yyyy-MM-dd")
-        );
-        if (dayObj) dayObj.tasks += 1;
-      }
-    });
+    if (tasks && Array.isArray(tasks)) {
+      tasks.forEach((task) => {
+        const taskDate = task.createdAt ? new Date(task.createdAt) : null;
+        if (taskDate) {
+          const dayObj = last7Days.find(
+            (d) =>
+              format(d.date, "yyyy-MM-dd") === format(taskDate, "yyyy-MM-dd"),
+          );
+          if (dayObj) dayObj.tasks += 1;
+        }
+      });
+    }
 
     return last7Days;
   }, [tasks]);
 
-  // User Growth per week (all weeks)
   const userGrowthData: UserGrowthData[] = useMemo(() => {
     if (!users || users.length === 0) return [];
 
-    // only users with a valid createdAt
     const validUsers = users.filter(
-      (u): u is typeof u & { createdAt: string } => !!u.createdAt
+      (u): u is typeof u & { createdAt: string } => !!u.createdAt,
     );
 
     if (validUsers.length === 0) return [];
 
     const dates = validUsers.map((u) => new Date(u.createdAt!));
-
     const start = startOfWeek(
-      new Date(Math.min(...dates.map((d) => d.getTime())))
+      new Date(Math.min(...dates.map((d) => d.getTime()))),
     );
     const end = endOfWeek(new Date(Math.max(...dates.map((d) => d.getTime()))));
     const weeks = eachWeekOfInterval({ start, end });
 
     return weeks.map((weekDate) => {
-      const weekLabel = `W${format(weekDate, "w yyyy")}`;
+      const weekLabel = `W${format(weekDate, "w yy")}`;
       const usersCount = validUsers.filter(
         (u) =>
           format(new Date(u.createdAt!), "w yyyy") ===
-          format(weekDate, "w yyyy")
+          format(weekDate, "w yyyy"),
       ).length;
       return { name: weekLabel, users: usersCount };
     });
   }, [users]);
 
-  // Completed Projects per month
   const completedProjectsData: ProjectCompletionData[] = useMemo(() => {
     if (!projects || projects.length === 0) return [];
 
-    // only projects with a valid createdAt
     const validProjects = projects.filter(
-      (p): p is typeof p & { createdAt: string } => !!p.createdAt
+      (p): p is typeof p & { createdAt: string } => !!p.createdAt,
     );
 
     if (validProjects.length === 0) return [];
 
     const dates = validProjects.map((p) => new Date(p.createdAt!));
     const start = startOfMonth(
-      new Date(Math.min(...dates.map((d) => d.getTime())))
+      new Date(Math.min(...dates.map((d) => d.getTime()))),
     );
     const end = endOfMonth(
-      new Date(Math.max(...dates.map((d) => d.getTime())))
+      new Date(Math.max(...dates.map((d) => d.getTime()))),
     );
     const months = eachMonthOfInterval({ start, end });
 
     return months.map((monthDate) => {
-      const monthLabel = format(monthDate, "MMM yyyy");
+      const monthLabel = format(monthDate, "MMM yy");
       const completedCount = validProjects.filter(
         (p) =>
           p.status === "completed" &&
-          format(new Date(p.createdAt!), "MMM yyyy") === monthLabel
+          format(new Date(p.createdAt!), "MMM yyyy") ===
+            format(monthDate, "MMM yyyy"),
       ).length;
       return { name: monthLabel, completed: completedCount };
     });
@@ -172,36 +166,46 @@ const AdminDashboard: React.FC = () => {
 
   if (projectLoading || taskLoading || userLoading) {
     return (
-      <div className="w-full min-h-screen flex items-center justify-center text-lg">
-        Loading dashboard data...
+      <div className="w-full min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-600 font-medium">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
+        <span>Loading dashboard data...</span>
       </div>
     );
   }
 
   const summaryCards = [
-    { title: "Projects", value: projectCount, icon: <ProjectIcon /> },
-    { title: "Tasks", value: taskCount, icon: <BarChart /> },
-    { title: "Users", value: userCount, icon: <Users /> },
+    {
+      title: "Projects",
+      value: projectCount,
+      icon: <ProjectIcon className="w-6 h-6" />,
+    },
+    {
+      title: "Tasks",
+      value: taskCount,
+      icon: <BarChart className="w-6 h-6" />,
+    },
+    { title: "Users", value: userCount, icon: <Users className="w-6 h-6" /> },
   ];
 
   return (
-    <div className="w-full min-h-screen p-6 bg-gradient-to-br from-blue-50 to-blue-100 space-y-6">
-      {/* Welcome */}
+    <div className="w-full min-h-screen p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-blue-100 space-y-6">
       <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
         custom={0}
-        className="text-center"
+        className="text-left md:text-center pt-2"
       >
-        <h1 className="text-4xl md:text-3xl font-extrabold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent drop-shadow-lg">
-          Welcome to PulseWork&apos;s{" "}
-          <span className="text-blue-700">{user?.name || "Admin"}</span>
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-gradient-to-r from-blue-700 to-blue-500 bg-clip-text text-transparent drop-shadow-sm">
+          Welcome back,{" "}
+          <span className="text-blue-700">{user?.name || "Admin"}</span>!
         </h1>
+        <p className="text-slate-500 text-sm mt-1">
+          PulseWork Management Dashboard Console
+        </p>
       </motion.div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {summaryCards.map((card, i) => (
           <motion.div
             key={i}
@@ -210,183 +214,230 @@ const AdminDashboard: React.FC = () => {
             variants={fadeInUp}
             custom={i + 1}
             whileHover="hover"
+            className="w-full"
           >
             <motion.div
-              className="p-4 shadow-md rounded-2xl bg-white flex items-center justify-between hover:shadow-xl transition-all"
+              className="p-5 shadow-sm rounded-2xl bg-white border border-slate-200/50 flex items-center justify-between hover:shadow-md transition-all duration-200"
               variants={cardHover}
             >
               <div>
-                <p className="text-gray-500">{card.title}</p>
-                <h2 className="text-2xl font-bold">{card.value}</h2>
+                <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">
+                  {card.title}
+                </p>
+                <h2 className="text-3xl font-black text-slate-800 mt-1">
+                  {card.value}
+                </h2>
               </div>
-              <div className="text-blue-600">{card.icon}</div>
+              <div className="text-blue-600 bg-blue-50 p-3 rounded-xl">
+                {card.icon}
+              </div>
             </motion.div>
           </motion.div>
         ))}
       </div>
 
-      {/* Charts Section */}
-      <div className="space-y-4 md:space-y-0">
-        {/* Weekly Tasks */}
+      <div className="space-y-4">
         <motion.div
           initial="hidden"
           animate="visible"
           variants={fadeInUp}
-          custom={5}
-          className="w-full p-4 mb-4 rounded-2xl shadow-md bg-white flex flex-col items-center"
+          custom={4}
+          className="w-full p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
         >
-          <div className="flex items-center gap-2 mb-2">
-            <BarChart width={28} height={28} />
-            <h2 className="font-bold text-lg">Weekly Tasks</h2>
+          <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+            <BarChart className="w-5 h-5 text-blue-600" />
+            <h2 className="font-bold text-slate-700">
+              Weekly Performance Overview
+            </h2>
           </div>
-          {weeklyTasksData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={weeklyTasksData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="name" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="tasks"
-                  stroke="#2563eb"
-                  strokeWidth={3}
-                  dot={{ r: 5, stroke: "#2563eb", strokeWidth: 2 }}
-                  activeDot={{ r: 7 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-gray-500 italic mt-10">No Weekly Tasks Data</p>
-          )}
+          <div className="w-full h-[240px]">
+            {weeklyTasksData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={weeklyTasksData}
+                  margin={{ left: -20, right: 10 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
+                  <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                  <Tooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="tasks"
+                    stroke="#2563eb"
+                    strokeWidth={3}
+                    dot={{
+                      r: 4,
+                      stroke: "#2563eb",
+                      strokeWidth: 2,
+                      fill: "#fff",
+                    }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-slate-400 italic text-sm">
+                No Performance Data
+              </div>
+            )}
+          </div>
         </motion.div>
 
-        {/* User Growth & Completed Projects */}
-        <div className="flex flex-col md:flex-row gap-4 mt-4">
-          {/* User Growth */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={fadeInUp}
+            custom={5}
+            className="p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
+          >
+            <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+              <Users className="w-5 h-5 text-emerald-500" />
+              <h2 className="font-bold text-slate-700">
+                User Acquisition Metrics
+              </h2>
+            </div>
+            <div className="w-full h-[180px]">
+              {userGrowthData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={userGrowthData}
+                    margin={{ left: -25, right: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                    <YAxis
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      allowDecimals={false}
+                    />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="users"
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      dot={{
+                        r: 4,
+                        stroke: "#10b981",
+                        strokeWidth: 2,
+                        fill: "#fff",
+                      }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-slate-400 italic text-sm">
+                  No Growth Data
+                </div>
+              )}
+            </div>
+          </motion.div>
+
           <motion.div
             initial="hidden"
             animate="visible"
             variants={fadeInUp}
             custom={6}
-            className="w-full md:w-1/2 p-4 rounded-2xl shadow-md bg-white flex flex-col items-center"
+            className="p-4 rounded-2xl shadow-sm border border-slate-200/50 bg-white flex flex-col"
           >
-            <div className="flex items-center gap-2 mb-2">
-              <Users width={28} height={28} />
-              <h2 className="font-bold text-lg">User Growth</h2>
+            <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+              <ProjectIcon className="w-5 h-5 text-amber-500" />
+              <h2 className="font-bold text-slate-700">
+                Project Fulfillment Track
+              </h2>
             </div>
-            {userGrowthData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={userGrowthData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="users"
-                    stroke="#10b981"
-                    strokeWidth={3}
-                    dot={{ r: 5, stroke: "#10b981", strokeWidth: 2 }}
-                    activeDot={{ r: 7 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-gray-500 italic mt-10">No User Growth Data</p>
-            )}
-          </motion.div>
-
-          {/* Completed Projects */}
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={fadeInUp}
-            custom={7}
-            className="w-full md:w-1/2 p-4 rounded-2xl shadow-md bg-white flex flex-col items-center"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <ProjectIcon width={28} height={28} />
-              <h2 className="font-bold text-lg">Completed Projects</h2>
+            <div className="w-full h-[180px]">
+              {completedProjectsData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={completedProjectsData}
+                    margin={{ left: -25, right: 10 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
+                    <YAxis
+                      stroke="#94a3b8"
+                      fontSize={11}
+                      allowDecimals={false}
+                    />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="completed"
+                      stroke="#f59e0b"
+                      strokeWidth={3}
+                      dot={{
+                        r: 4,
+                        stroke: "#f59e0b",
+                        strokeWidth: 2,
+                        fill: "#fff",
+                      }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-slate-400 italic text-sm">
+                  No Analytics Recorid
+                </div>
+              )}
             </div>
-            {completedProjectsData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={completedProjectsData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="name" stroke="#6b7280" />
-                  <YAxis stroke="#6b7280" />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="completed"
-                    stroke="#f59e0b"
-                    strokeWidth={3}
-                    dot={{ r: 5, stroke: "#f59e0b", strokeWidth: 2 }}
-                    activeDot={{ r: 7 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-gray-500 mt-10">No Completed Projects</p>
-            )}
           </motion.div>
         </div>
       </div>
 
-      {/* Active Tasks Table */}
       <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        custom={8}
-        className="p-6 rounded-2xl shadow-md bg-white mt-6"
+        custom={7}
+        className="p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
       >
-        <h2 className="text-xl font-bold mb-4 text-gray-700 flex items-center gap-2">
-          <TasksIcon className="w-6 h-6 text-blue-600" strokeWidth={2} />
-          Active Tasks
+        <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
+          <TasksIcon className="w-5 h-5 text-blue-600" strokeWidth={2} />
+          Active Context Workloads
         </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-200 rounded-lg divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded-xl border border-slate-100">
+          <table className="min-w-full divide-y divide-slate-100 text-sm">
+            <thead className="bg-slate-50/70 text-slate-500 font-medium">
               <tr>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold uppercase tracking-wider">
-                  Task
+                <th className="px-4 py-3 text-left tracking-wide">
+                  Task Label
                 </th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold uppercase tracking-wider">
-                  Assigned To
+                <th className="px-4 py-3 text-left tracking-wide">
+                  Owner Assignment
                 </th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold uppercase tracking-wider">
-                  Status
+                <th className="px-4 py-3 text-left tracking-wide">
+                  Lifecycle Stage
                 </th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold uppercase tracking-wider">
-                  Due Date
+                <th className="px-4 py-3 text-left tracking-wide">
+                  Target Deadline
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
               {tasks.filter((t) => t.status === "in-progress").length > 0 ? (
                 tasks
                   .filter((t) => t.status === "in-progress")
                   .slice(0, 5)
-                  .map((task, index) => (
+                  .map((task) => (
                     <tr
                       key={task._id}
-                      className={`transition hover:bg-blue-50 ${
-                        index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                      }`}
+                      className="hover:bg-slate-50/50 transition duration-150"
                     >
-                      <td className="px-4 py-3 text-gray-800 font-medium">
+                      <td className="px-4 py-3 font-semibold text-slate-800">
                         {task.title}
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
+                      <td className="px-4 py-3 text-slate-600">
                         {task.assignedTo?.name || "Unassigned"}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-1 rounded-full text-white text-sm font-semibold bg-yellow-500">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/40">
                           In Progress
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
+                      <td className="px-4 py-3 text-slate-500">
                         {task.deadline
                           ? new Date(task.deadline).toLocaleDateString()
                           : "N/A"}
@@ -397,9 +448,9 @@ const AdminDashboard: React.FC = () => {
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-6 text-center text-gray-400"
+                    className="px-4 py-8 text-center text-slate-400 italic"
                   >
-                    No active tasks in progress
+                    No active pipelines matching criteria.
                   </td>
                 </tr>
               )}
@@ -408,63 +459,60 @@ const AdminDashboard: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* In-Progress Projects Table */}
       <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
-        custom={11}
-        className="p-6 rounded-2xl shadow-md bg-white mt-6"
+        custom={8}
+        className="p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
       >
-        <h2 className="text-xl font-bold mb-4 text-gray-700 flex items-center gap-2">
-          <ProjectIcon className="w-6 h-6 text-blue-600" strokeWidth={2} />
-          In-Progress Projects
+        <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
+          <ProjectIcon className="w-5 h-5 text-blue-600" strokeWidth={2} />
+          Active Operations Streams
         </h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-200 rounded-lg divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded-xl border border-slate-100">
+          <table className="min-w-full divide-y divide-slate-100 text-sm">
+            <thead className="bg-slate-50/70 text-slate-500 font-medium">
               <tr>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold uppercase tracking-wider">
-                  Project
+                <th className="px-4 py-3 text-left tracking-wide">
+                  Project Scope
                 </th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold uppercase tracking-wider">
-                  Manager
+                <th className="px-4 py-3 text-left tracking-wide">
+                  Managing Executive
                 </th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold uppercase tracking-wider">
-                  Status
+                <th className="px-4 py-3 text-left tracking-wide">
+                  Operational Status
                 </th>
-                <th className="px-4 py-3 text-left text-gray-700 font-semibold uppercase tracking-wider">
-                  Deadline
+                <th className="px-4 py-3 text-left tracking-wide">
+                  Target Timeline
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-100 bg-white text-slate-700">
               {projects.filter((p) => p.status === "in-progress").length > 0 ? (
                 projects
                   .filter((p) => p.status === "in-progress")
-                  .slice(0, 5) // Show only top 5
-                  .map((project, index) => (
+                  .slice(0, 5)
+                  .map((project) => (
                     <tr
                       key={project._id}
-                      className={`transition hover:bg-blue-50 ${
-                        index % 2 === 0 ? "bg-gray-50" : "bg-white"
-                      }`}
+                      className="hover:bg-slate-50/50 transition duration-150"
                     >
-                      <td className="px-4 py-3 text-gray-800 font-medium">
+                      <td className="px-4 py-3 font-semibold text-slate-800">
                         {project.name}
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
+                      <td className="px-4 py-3 text-slate-600">
                         {typeof project.manager === "object" &&
                         "name" in project.manager
                           ? project.manager.name
                           : "N/A"}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-1 rounded-full text-white text-sm font-semibold bg-yellow-500">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/40">
                           In Progress
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">
+                      <td className="px-4 py-3 text-slate-500">
                         {project.deadline
                           ? new Date(project.deadline).toLocaleDateString()
                           : "N/A"}
@@ -475,9 +523,9 @@ const AdminDashboard: React.FC = () => {
                 <tr>
                   <td
                     colSpan={4}
-                    className="px-4 py-6 text-center text-gray-400"
+                    className="px-4 py-8 text-center text-slate-400 italic"
                   >
-                    No in-progress projects
+                    No operational branches in current context.
                   </td>
                 </tr>
               )}
@@ -487,47 +535,46 @@ const AdminDashboard: React.FC = () => {
 
         <button
           onClick={() => navigate("/admin/project")}
-          className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg shadow hover:bg-blue-700 transition"
+          className="mt-4 w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-sm transition active:scale-[0.98]"
         >
           View All Projects
         </button>
       </motion.div>
 
-      {/* Quick Actions */}
       <motion.div
         initial="hidden"
         animate="visible"
         variants={fadeInUp}
         custom={9}
-        className="p-6 rounded-2xl shadow-md bg-white mt-6"
+        className="p-5 rounded-2xl shadow-sm border border-slate-200/50 bg-white"
       >
-        <h2 className="text-xl font-bold mb-4 text-gray-700 flex items-center gap-2">
-          <PlusCircle className="w-6 h-6 text-blue-600" strokeWidth={2} />
-          Quick Actions
+        <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2 mb-4">
+          <PlusCircle className="w-5 h-5 text-blue-600" strokeWidth={2} />
+          Quick Actions Console
         </h2>
-        <div className="flex flex-wrap gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={() => navigate("/admin/project")}
-            className="flex items-center gap-3 px-6 py-3 bg-blue-50 text-blue-700 rounded-xl shadow-md hover:bg-blue-100 hover:scale-105 transition-transform duration-300"
+            className="flex items-center justify-center sm:justify-start gap-3 px-5 py-3.5 bg-blue-50/50 text-blue-700 rounded-xl hover:bg-blue-100/70 border border-blue-100 transition active:scale-[0.98]"
           >
-            <ProjectIcon width={22} height={22} stroke="#2563eb" />
-            <span className="font-medium">Add Project</span>
+            <ProjectIcon width={20} height={20} stroke="#2563eb" />
+            <span className="font-semibold text-sm">Add Project</span>
           </button>
 
           <button
             onClick={() => navigate("/admin/tasks")}
-            className="flex items-center gap-3 px-6 py-3 bg-green-50 text-green-700 rounded-xl shadow-md hover:bg-green-100 hover:scale-105 transition-transform duration-300"
+            className="flex items-center justify-center sm:justify-start gap-3 px-5 py-3.5 bg-emerald-50/50 text-emerald-700 rounded-xl hover:bg-emerald-100/70 border border-emerald-100 transition active:scale-[0.98]"
           >
-            <TasksIcon width={22} height={22} stroke="#16a34a" />
-            <span className="font-medium">Add Task</span>
+            <TasksIcon width={20} height={20} stroke="#16a34a" />
+            <span className="font-semibold text-sm">Add Task</span>
           </button>
 
           <button
             onClick={() => navigate("/admin/user")}
-            className="flex items-center gap-3 px-6 py-3 bg-blue-50 text-blue-700 rounded-xl shadow-md hover:bg-blue-100 hover:scale-105 transition-transform duration-300"
+            className="flex items-center justify-center sm:justify-start gap-3 px-5 py-3.5 bg-indigo-50/50 text-indigo-700 rounded-xl hover:bg-indigo-100/70 border border-indigo-100 transition active:scale-[0.98]"
           >
-            <User width={22} height={22} stroke="blue" />
-            <span className="font-medium">Add User</span>
+            <User width={20} height={20} stroke="blue" />
+            <span className="font-semibold text-sm">Add User</span>
           </button>
         </div>
       </motion.div>

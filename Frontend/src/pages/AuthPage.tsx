@@ -15,7 +15,7 @@ const AuthPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const { loading, error, user } = useSelector(
-    (state: RootState) => state.auth
+    (state: RootState) => state.auth,
   );
 
   const [showPassword, setShowPassword] = useState(false);
@@ -28,18 +28,17 @@ const AuthPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const isEmail = emailRegex.test(credentials.identifier);
+    const isEmail = emailRegex.test(credentials.identifier.trim());
 
     const payload: { email?: string; username?: string; password: string } = {
       password: credentials.password,
       ...(isEmail
-        ? { email: credentials.identifier }
-        : { username: credentials.identifier }),
+        ? { email: credentials.identifier.trim() }
+        : { username: credentials.identifier.trim() }),
     };
     dispatch(loginUser(payload));
   };
 
-  // 🔴 Error Toast
   useEffect(() => {
     if (error) {
       toast.custom((t) => (
@@ -58,19 +57,30 @@ const AuthPage: React.FC = () => {
         </AnimatePresence>
       ));
 
-      // ❌ Reset inputs on error
-      setCredentials({ identifier: "", password: "" });
-    }
-  }, [error]);
+      setCredentials((prev) => ({ ...prev, password: "" }));
 
-  // ✅ Success Toast
+      dispatch(clearAuthError());
+    }
+  }, [error, dispatch]);
+
   useEffect(() => {
     if (user) {
-      toast(
-        <div className="bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg border border-green-400">
-          Welcome back, {user.name}!
-        </div>,
-        { duration: 3000 }
+      toast.custom(
+        (t) => (
+          <AnimatePresence>
+            {t.visible && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg border border-green-400"
+              >
+                Welcome back, {user.name}! 🎉
+              </motion.div>
+            )}
+          </AnimatePresence>
+        ),
+        { duration: 3000 },
       );
 
       setCredentials({ identifier: "", password: "" });
@@ -81,7 +91,6 @@ const AuthPage: React.FC = () => {
     }
   }, [user, navigate]);
 
-  // Clear error on unmount
   useEffect(() => {
     return () => {
       dispatch(clearAuthError());
@@ -89,51 +98,46 @@ const AuthPage: React.FC = () => {
   }, [dispatch]);
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-700 via-indigo-700 to-blue-900">
-      {/* Toaster for custom messages */}
-      <Toaster position="bottom-right" />
+    <div className="relative min-h-screen flex items-center justify-center bg-gradient-to-tr from-blue-700 via-indigo-700 to-blue-900 overflow-hidden">
+      <Toaster position="bottom-right" reverseOrder={false} />
 
-      {/* Background */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 select-none pointer-events-none">
         <img
           src="/images/background Image.png"
           alt="PulseWork Background"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-80"
         />
         <div className="absolute inset-0 bg-blue-900/60 backdrop-blur-sm" />
       </div>
 
-      {/* Title */}
       <motion.div
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7 }}
-        className="absolute top-[8%] text-center"
+        className="absolute top-[6%] sm:top-[8%] text-center px-4 w-full"
       >
-        <h1 className="text-4xl font-extrabold text-white flex items-center justify-center gap-2 drop-shadow-lg">
-          <span className="bg-indigo-600 text-white px-3 py-1 rounded-lg shadow-md">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-white flex items-center justify-center gap-2 drop-shadow-lg">
+          <span className="bg-indigo-600 text-white px-3 py-1 rounded-lg shadow-md text-2xl sm:text-3xl">
             PW
           </span>
           PulseWork
         </h1>
-        <p className="text-white/90 mt-3 text-lg font-medium">
+        <p className="text-white/90 mt-2 sm:mt-3 text-base sm:text-lg font-medium">
           Smart Workforce & Project Management
         </p>
       </motion.div>
 
-      {/* Auth Card */}
       <motion.div
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, delay: 0.2 }}
-        className="w-[380px] rounded-2xl shadow-2xl border border-gray-200/20 backdrop-blur-lg bg-white/95 p-6"
+        className="w-full max-w-[360px] sm:max-w-[380px] mx-4 rounded-2xl shadow-2xl border border-gray-200/20 backdrop-blur-lg bg-white/95 p-6 z-10"
       >
         <h2 className="text-center text-2xl font-bold text-blue-600 mb-6">
           Sign in to PulseWork
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
           <div className="relative">
             <input
               type="text"
@@ -144,14 +148,13 @@ const AuthPage: React.FC = () => {
               onChange={(e) =>
                 setCredentials({ ...credentials, identifier: e.target.value })
               }
-              className="w-full rounded-md border border-gray-300 p-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full rounded-md border border-gray-300 p-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 disabled:opacity-60"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 select-none pointer-events-none">
               <User width={20} height={20} stroke="blue" />
             </div>
           </div>
 
-          {/* Password */}
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
@@ -162,12 +165,13 @@ const AuthPage: React.FC = () => {
               onChange={(e) =>
                 setCredentials({ ...credentials, password: e.target.value })
               }
-              className="w-full rounded-md border border-gray-300 p-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full rounded-md border border-gray-300 p-3 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 disabled:opacity-60"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition p-1"
+              disabled={loading}
             >
               {showPassword ? (
                 <LockOpen width={20} height={20} stroke="blue" />
@@ -177,11 +181,10 @@ const AuthPage: React.FC = () => {
             </button>
           </div>
 
-          {/* Remember me + Sign in */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-1">
             <label
               className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none"
-              onClick={() => setRememberMe(!rememberMe)}
+              onClick={() => !loading && setRememberMe(!rememberMe)}
             >
               <motion.div
                 className={`flex h-5 w-5 items-center justify-center rounded border transition ${
@@ -195,12 +198,13 @@ const AuthPage: React.FC = () => {
               </motion.div>
               Remember Me
             </label>
+
             <button
               type="submit"
-              className="flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition"
               disabled={loading}
             >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {loading && <Loader2 className="h-4 w-4 animate-spin shrink-0" />}
               Sign In
             </button>
           </div>

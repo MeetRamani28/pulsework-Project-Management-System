@@ -7,6 +7,8 @@ import axios, { AxiosError } from "axios";
 import Cookies from "js-cookie";
 
 const API_URL = import.meta.env.VITE_API_URL;
+axios.defaults.baseURL = API_URL;
+axios.defaults.withCredentials = true;
 
 export interface User {
   _id: string;
@@ -31,45 +33,42 @@ const initialState: AuthState = {
   success: false,
 };
 
-// Login User
 export const loginUser = createAsyncThunk<
   { user: User; token: string },
-  { email?: string; username?: string; password: string},
+  { email?: string; username?: string; password: string },
   { rejectValue: string }
 >("auth/loginUser", async (credentials, thunkAPI) => {
   try {
-    const res = await axios.post(`${API_URL}/auth/login`, credentials, {
+    const res = await axios.post(`/auth/login`, credentials, {
       withCredentials: true,
     });
     return res.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
     return thunkAPI.rejectWithValue(
-      err.response?.data?.message ?? "Login failed"
+      err.response?.data?.message ?? "Login failed",
     );
   }
 });
 
-// Register User
 export const registerUser = createAsyncThunk<
   { message: string; user: User },
   { name: string; email: string; password: string; roles?: string },
   { rejectValue: string }
 >("auth/registerUser", async (userData, thunkAPI) => {
   try {
-    const res = await axios.post(`${API_URL}/auth/register`, userData, {
+    const res = await axios.post(`/auth/register`, userData, {
       withCredentials: true,
     });
     return res.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
     return thunkAPI.rejectWithValue(
-      err.response?.data?.message ?? "Registration failed"
+      err.response?.data?.message ?? "Registration failed",
     );
   }
 });
 
-// Get Current User
 export const getCurrentUser = createAsyncThunk<
   { user: User },
   void,
@@ -77,36 +76,31 @@ export const getCurrentUser = createAsyncThunk<
 >("auth/getCurrentUser", async (_, thunkAPI) => {
   try {
     const token = Cookies.get("token");
-    const res = await axios.get(`${API_URL}/auth/me`, {
+    const res = await axios.get(`/auth/me`, {
       withCredentials: true,
-      headers: { Authorization: `Bearer ${token}` },
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return res.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
     return thunkAPI.rejectWithValue(
-      err.response?.data?.message ?? "Failed to fetch user"
+      err.response?.data?.message ?? "Failed to fetch user",
     );
   }
 });
 
-// Logout User
 export const logoutUser = createAsyncThunk<
   { message: string },
   void,
   { rejectValue: string }
 >("auth/logoutUser", async (_, thunkAPI) => {
   try {
-    const res = await axios.post(
-      `${API_URL}/auth/logout`,
-      {},
-      { withCredentials: true }
-    );
+    const res = await axios.post(`/auth/logout`, {}, { withCredentials: true });
     return res.data;
   } catch (error: unknown) {
     const err = error as AxiosError<{ message: string }>;
     return thunkAPI.rejectWithValue(
-      err.response?.data?.message || "Logout failed"
+      err.response?.data?.message || "Logout failed",
     );
   }
 });
@@ -123,7 +117,6 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Login
     builder
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
@@ -135,15 +128,18 @@ const authSlice = createSlice({
           state.loading = false;
           state.user = action.payload.user;
           state.token = action.payload.token;
-          Cookies.set("token", action.payload.token, { expires: 7 });
-        }
+          Cookies.set("token", action.payload.token, {
+            expires: 7,
+            secure: true, // માત્ર HTTPS પર જ ચાલશે
+            sameSite: "none", // ક્રોસ-ડોમેન (Vercel to Render) સપોર્ટ કરશે
+          });
+        },
       )
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Login failed";
       });
 
-    // Register
     builder
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
@@ -160,7 +156,6 @@ const authSlice = createSlice({
         state.success = false;
       });
 
-    // Get Current User
     builder
       .addCase(getCurrentUser.pending, (state) => {
         state.loading = true;
@@ -170,14 +165,13 @@ const authSlice = createSlice({
         (state, action: PayloadAction<{ user: User }>) => {
           state.loading = false;
           state.user = action.payload.user;
-        }
+        },
       )
       .addCase(getCurrentUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Failed to fetch user";
       });
 
-    // Logout
     builder
       .addCase(logoutUser.pending, (state) => {
         state.loading = true;
@@ -187,7 +181,7 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = null;
         state.token = null;
-        Cookies.remove("token");
+        Cookies.remove("token", { secure: true, sameSite: "none" });
       })
       .addCase(logoutUser.rejected, (state, action) => {
         state.loading = false;

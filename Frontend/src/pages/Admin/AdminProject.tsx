@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store/store";
@@ -12,8 +10,8 @@ import {
   clearProjectSuccess,
 } from "../../Reducers/ProjectReducers";
 import type { Project } from "../../Reducers/ProjectReducers";
-import { Loader2, X } from "lucide-react";
-import { motion } from "framer-motion";
+import { Loader2, X, AlertTriangle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { PlusCircle } from "../../Icons/DashboardIcons";
 import { getAllUsers } from "../../Reducers/UserReducers";
 import { Delete } from "../../Icons/Delete";
@@ -35,7 +33,7 @@ interface ProjectForm {
 const AdminProject: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { projects, loading, error, success } = useSelector(
-    (state: RootState) => state.projects
+    (state: RootState) => state.projects,
   );
   const { users } = useSelector((state: RootState) => state.users);
 
@@ -45,7 +43,9 @@ const AdminProject: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [form, setForm] = useState<ProjectForm>({
     name: "",
@@ -56,73 +56,62 @@ const AdminProject: React.FC = () => {
     deadline: "",
   });
 
-  // Fetch projects & users initially
   useEffect(() => {
     dispatch(getAllProjects());
     dispatch(getAllUsers());
   }, [dispatch]);
 
-  // Handle success & error feedback
   useEffect(() => {
     if (error) {
       toast.error(error);
       dispatch(clearProjectError());
     }
 
-    if (success && !deleteId) {
-      toast.success(
-        editMode
-          ? "Project updated successfully"
-          : "Project created successfully"
-      );
+    if (success) {
+      if (!projectToDelete) {
+        toast.success(
+          editMode
+            ? "Project updated successfully ✨"
+            : "Project created successfully 🚀",
+        );
+        setShowForm(false);
+        setEditMode(false);
+        setForm({
+          name: "",
+          description: "",
+          manager: "",
+          members: [],
+          status: "in-progress",
+          deadline: "",
+        });
+      } else {
+        toast.success("Project deleted successfully 🗑️");
+        setProjectToDelete(null);
+      }
       dispatch(clearProjectSuccess());
-      setShowForm(false);
-      setEditMode(false);
-      setForm({
-        name: "",
-        description: "",
-        manager: "",
-        members: [],
-        status: "in-progress",
-        deadline: "",
-      });
     }
-    if (success && deleteId) {
-      toast.success("Project deleted successfully");
-      dispatch(clearProjectSuccess());
-      setDeleteId(null);
-    }
-  }, [error, success, dispatch, editMode, deleteId]);
+  }, [error, success, dispatch, editMode, projectToDelete]);
 
-  // Create or update project
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return toast.error("Project name is required!");
     if (!form.manager) return toast.error("A project must have one manager!");
 
-    try {
-      if (editMode && currentId) {
-        await dispatch(
-          updateProject({ id: currentId, updates: form })
-        ).unwrap();
-      } else {
-        await dispatch(createProject(form)).unwrap();
-      }
-    } catch (err: unknown) {
-      if (err instanceof Error) toast.error(err.message);
-      else toast.error("Something went wrong!");
+    if (editMode && currentId) {
+      dispatch(updateProject({ id: currentId, updates: form }));
+    } else {
+      dispatch(createProject(form));
     }
   };
 
-  // Delete project
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this project?")) {
-      dispatch(deleteProject(id));
-      setDeleteId(id);
+  const confirmDelete = async () => {
+    if (projectToDelete) {
+      setIsDeleting(true);
+      await dispatch(deleteProject(projectToDelete));
+      setIsDeleting(false);
     }
   };
 
-  // Edit project
   const handleEdit = (project: Project) => {
     setCurrentId(project._id);
     setForm({
@@ -142,10 +131,16 @@ const AdminProject: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-blue-600">Projects</h1>
+    <div className="p-4 sm:p-6 bg-slate-50/50 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800">
+            Projects Workspace
+          </h1>
+          <p className="text-slate-500 text-sm mt-0.5">
+            Manage enterprise pipelines and operations
+          </p>
+        </div>
         <button
           onClick={() => {
             setShowForm(true);
@@ -159,236 +154,320 @@ const AdminProject: React.FC = () => {
               deadline: "",
             });
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg shadow transition hover:bg-blue-100"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-sm transition active:scale-95 self-start sm:self-auto w-full sm:w-auto"
         >
-          <PlusCircle stroke="#2563eb" height={20} /> Add Project
+          <PlusCircle stroke="white" height={18} /> <span>Add Project</span>
         </button>
       </div>
 
-      {/* Loading */}
-      {loading && (
-        <div className="flex justify-center py-10">
-          <Loader2 className="animate-spin text-blue-600" size={32} />
+      {loading && !showForm && !projectToDelete && (
+        <div className="flex flex-col items-center justify-center py-20 text-slate-500 text-sm font-medium">
+          <Loader2 className="animate-spin text-blue-600 w-8 h-8 mb-2" />
+          <span>Synchronizing architecture logs...</span>
         </div>
       )}
 
-      {/* Project Cards */}
       {!loading && projects.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {projects.map((p: Project) => (
             <motion.div
               key={p._id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-md p-6 border hover:shadow-lg transition"
+              className="bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200"
             >
-              <h2 className="text-lg font-bold text-blue-600 mb-2">{p.name}</h2>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {p.description || "No description provided."}
-              </p>
-
-              {/* Meta */}
-              <div className="flex flex-col text-sm text-gray-500 mb-4">
-                <div className="flex items-center">
-                  <User height={20} width={16} stroke="blue" className="text-gray-400" />
-                  <span>
-                    {typeof p.manager === "string"
-                      ? users.find((u) => u._id === p.manager)?.name ||
-                        "Unassigned"
-                      : p.manager?.name || "Unassigned"}
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <h2 className="text-base font-bold text-slate-800 truncate max-w-[80%]">
+                    {p.name}
+                  </h2>
+                  <span
+                    className={`px-2.5 py-0.5 text-[11px] font-bold uppercase border tracking-wider rounded-full shrink-0 ${
+                      p.status === "completed"
+                        ? "bg-blue-50 text-blue-700 border-blue-200/40"
+                        : p.status === "in-progress"
+                          ? "bg-amber-50 text-amber-700 border-amber-200/40"
+                          : "bg-slate-50 text-slate-600 border-slate-200/40"
+                    }`}
+                  >
+                    {p.status || "N/A"}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar1 height={20} className="text-gray-400" />
-                  <span>
-                    {p.deadline
-                      ? new Date(p.deadline).toLocaleDateString()
-                      : "No deadline"}
-                  </span>
-                </div>
+                <p className="text-slate-500 text-sm mb-4 line-clamp-2 leading-relaxed">
+                  {p.description || "No project description provided."}
+                </p>
               </div>
 
-              {/* Status */}
-              <span
-                className={`inline-block px-3 py-1 text-xs font-medium rounded-full mb-4 ${
-                  p.status === "completed"
-                    ? "bg-blue-100 text-blue-700"
-                    : p.status === "in-progress"
-                    ? "bg-yellow-100 text-yellow-700"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {p.status || "N/A"}
-              </span>
+              <div className="border-t border-slate-100 pt-3 mt-2">
+                <div className="flex flex-col gap-2 text-xs font-semibold text-slate-600 mb-4">
+                  <div className="flex items-center gap-2">
+                    <User
+                      height={16}
+                      width={14}
+                      stroke="#64748b"
+                      className="shrink-0"
+                    />
+                    <span className="truncate">
+                      Manager:{" "}
+                      <strong className="text-slate-800 font-bold">
+                        {typeof p.manager === "string"
+                          ? users.find((u) => u._id === p.manager)?.name ||
+                            "Unassigned"
+                          : p.manager?.name || "Unassigned"}
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar1
+                      height={16}
+                      width={14}
+                      stroke="#64748b"
+                      className="shrink-0"
+                    />
+                    <span>
+                      Deadline:{" "}
+                      <strong className="text-slate-800 font-bold">
+                        {p.deadline
+                          ? new Date(p.deadline).toLocaleDateString()
+                          : "N/A"}
+                      </strong>
+                    </span>
+                  </div>
+                </div>
 
-              {/* Actions */}
-              <div className="flex justify-end gap-3">
-                <button onClick={() => handleEdit(p)}>
-                  <EditAnimatedSquare />
-                </button>
-                <button onClick={() => handleDelete(p._id)}>
-                  <Delete height={20} stroke="red" />
-                </button>
+                <div className="flex justify-end gap-2 border-t border-slate-50 pt-2.5">
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="p-2 rounded-lg hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition"
+                    aria-label="Edit project"
+                  >
+                    <EditAnimatedSquare />
+                  </button>
+                  <button
+                    onClick={() => setProjectToDelete(p._id)}
+                    className="p-2 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition"
+                    aria-label="Delete project"
+                  >
+                    <Delete height={18} stroke="currentColor" />
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}
         </div>
       )}
 
-      {/* Empty State */}
       {!loading && projects.length === 0 && (
-        <div className="text-center text-gray-500 italic py-10">
-          No projects found.
+        <div className="text-center bg-white border border-dashed rounded-2xl p-12 text-slate-400 italic text-sm">
+          No projects matching current index criteria found.
         </div>
       )}
 
-      {/* Create/Edit Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 
-                       overflow-y-auto max-h-[90vh] custom-scrollbar"
-          >
-            {/* Close */}
-            <button
-              onClick={() => setShowForm(false)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition"
+      <AnimatePresence>
+        {showForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => !loading && setShowForm(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg z-10 flex flex-col max-h-[85vh]"
             >
-              <X size={20} />
-            </button>
-
-            {/* Header */}
-            <div className="px-6 pt-6 pb-4 border-b">
-              <h2 className="text-xl font-bold text-gray-800">
-                {editMode ? "Edit Project" : "Create Project"}
-              </h2>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-              {/* Name */}
-              <div>
-                <label className="block text-sm text-gray-600">Name</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 border rounded-lg 
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm text-gray-600">
-                  Description
-                </label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  className="w-full mt-1 px-3 py-2 border rounded-lg 
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  rows={3}
-                />
-              </div>
-
-              {/* Manager Dropdown */}
-              <div>
-                <label className="block text-sm text-gray-600">Manager</label>
-                <CustomDropdown
-                  options={availableManagers.map((m) => ({
-                    label: m.name,
-                    value: m._id,
-                  }))}
-                  selected={form.manager}
-                  onSelect={(value) => setForm({ ...form, manager: value })}
-                  placeholder="Select Manager"
-                />
-              </div>
-
-              {/* Members Multi-Select */}
-              <div>
-                <label className="block text-sm text-gray-600">Members</label>
-                <CustomDropdown
-                  options={availableEmployees.map((e) => ({
-                    label: e.name,
-                    value: e._id,
-                  }))}
-                  selected={form.members}
-                  onSelectMulti={(values: string[]) =>
-                    setForm({ ...form, members: values })
-                  }
-                  multi
-                  placeholder={
-                    form.members.length > 0
-                      ? `${form.members.length} selected`
-                      : "Select Members"
-                  }
-                />
-              </div>
-
-              {/* Status Dropdown */}
-              <div>
-                <label className="block text-sm text-gray-600">Status</label>
-                <CustomDropdown
-                  options={[
-                    { label: "Planned", value: "planned" },
-                    { label: "In Progress", value: "in-progress" },
-                    { label: "Completed", value: "completed" },
-                  ]}
-                  selected={form.status}
-                  onSelect={(value) => setForm({ ...form, status: value })}
-                  placeholder="Select Status"
-                />
-              </div>
-
-              {/* Deadline */}
-              <div>
-                <label className="block text-sm text-gray-600">Deadline</label>
-                <input
-                  type="date"
-                  value={form.deadline || ""}
-                  onChange={(e) =>
-                    setForm({ ...form, deadline: e.target.value })
-                  }
-                  className="w-full mt-1 px-3 py-2 border rounded-lg 
-                             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </form>
-
-            {/* Actions */}
-            <div className="px-6 py-4 border-t flex justify-end gap-2">
               <button
-                type="button"
                 onClick={() => setShowForm(false)}
-                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition"
+                disabled={loading}
               >
-                Cancel
+                <X size={18} />
               </button>
-              <button
-                type="submit"
-                onClick={handleSubmit}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="text-lg font-bold text-slate-800">
+                  {editMode
+                    ? "Modify Operational Scope"
+                    : "Initialize New Pipeline"}
+                </h2>
+              </div>
+
+              <form
+                onSubmit={handleFormSubmit}
+                className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar"
               >
-                {loading ? (
-                  <Loader2 className="animate-spin w-5 h-5" />
-                ) : editMode ? (
-                  "Update"
-                ) : (
-                  "Create"
-                )}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Project Name
+                  </label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 font-medium"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Description Abstract
+                  </label>
+                  <textarea
+                    value={form.description}
+                    onChange={(e) =>
+                      setForm({ ...form, description: e.target.value })
+                    }
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 font-medium resize-none"
+                    rows={3}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Executive Lead Manager
+                  </label>
+                  <CustomDropdown
+                    options={availableManagers.map((m) => ({
+                      label: m.name,
+                      value: m._id,
+                    }))}
+                    selected={form.manager}
+                    onSelect={(value) => setForm({ ...form, manager: value })}
+                    placeholder="Select Lead Assignment"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Resource Allocations (Members)
+                  </label>
+                  <CustomDropdown
+                    options={availableEmployees.map((e) => ({
+                      label: e.name,
+                      value: e._id,
+                    }))}
+                    selected={form.members}
+                    onSelectMulti={(values: string[]) =>
+                      setForm({ ...form, members: values })
+                    }
+                    multi
+                    placeholder={
+                      form.members.length > 0
+                        ? `${form.members.length} operators active`
+                        : "Select Node Groups"
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Deployment Status
+                  </label>
+                  <CustomDropdown
+                    options={[
+                      { label: "Planned Route", value: "planned" },
+                      { label: "Active Execution", value: "in-progress" },
+                      { label: "Fulfillment Achieved", value: "completed" },
+                    ]}
+                    selected={form.status}
+                    onSelect={(value) => setForm({ ...form, status: value })}
+                    placeholder="Select Lifespan Layer"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Fulfillment Deadline
+                  </label>
+                  <input
+                    type="date"
+                    value={form.deadline || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, deadline: e.target.value })
+                    }
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 font-medium"
+                    disabled={loading}
+                  />
+                </div>
+              </form>
+
+              <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex justify-end gap-2.5 rounded-b-2xl">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-200 hover:bg-slate-300 text-slate-700 transition"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  onClick={handleFormSubmit}
+                  className="flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white min-w-[80px] shadow-sm transition active:scale-95"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin w-4 h-4" />
+                  ) : editMode ? (
+                    "Update Node"
+                  ) : (
+                    "Deploy Stream"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {projectToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => !isDeleting && setProjectToDelete(null)}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm relative z-10 text-center"
+            >
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600 mb-3 border border-red-100">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-base font-bold text-slate-800">
+                Confirm Deletion
+              </h3>
+              <p className="text-slate-500 text-sm mt-1.5 leading-relaxed">
+                Are you absolutely sure you want to terminate this project
+                pipeline? This action cannot be reverted.
+              </p>
+              <div className="flex gap-2.5 mt-5 border-t border-slate-50 pt-4">
+                <button
+                  onClick={() => setProjectToDelete(null)}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                  disabled={isDeleting}
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition active:scale-95"
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Confirm Purge"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

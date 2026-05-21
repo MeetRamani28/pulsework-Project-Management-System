@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store/store";
@@ -9,12 +7,13 @@ import {
   createTask,
   updateTask,
   clearTaskError,
-  type Task,
+  clearTaskSuccess,
 } from "../../Reducers/TaskReducers";
+import type { Task } from "../../Reducers/TaskReducers";
 import { getAllProjects } from "../../Reducers/ProjectReducers";
 import { getAllUsers } from "../../Reducers/UserReducers";
-import { Loader2, X } from "lucide-react";
-import { motion } from "framer-motion";
+import { Loader2, X, AlertTriangle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { PlusCircle, Users } from "../../Icons/DashboardIcons";
 import { Delete } from "../../Icons/Delete";
 import { EditAnimatedSquare } from "../../Icons/EditAnimated";
@@ -35,8 +34,8 @@ interface TaskForm {
 
 const ManagerTasks: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { tasks, loading, error } = useSelector(
-    (state: RootState) => state.tasks
+  const { tasks, loading, error, success } = useSelector(
+    (state: RootState) => state.tasks,
   );
   const { projects } = useSelector((state: RootState) => state.projects);
   const { users, currentUser } = useSelector((state: RootState) => state.users);
@@ -44,6 +43,10 @@ const ManagerTasks: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
+
+  const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
+  const [isDeletingLocal, setIsDeletingLocal] = useState(false);
+
   const [form, setForm] = useState<TaskForm>({
     title: "",
     description: "",
@@ -54,22 +57,46 @@ const ManagerTasks: React.FC = () => {
     assignedTo: "",
   });
 
-  // Fetch tasks, users, projects initially
   useEffect(() => {
     dispatch(getAllTasks());
     dispatch(getAllProjects());
     dispatch(getAllUsers());
   }, [dispatch]);
 
-  // Handle error feedback
   useEffect(() => {
     if (error) {
       toast.error(error);
       dispatch(clearTaskError());
+      setIsDeletingLocal(false);
     }
-  }, [error, dispatch]);
 
-  // Create or update task
+    if (success) {
+      if (taskToDelete) {
+        toast.success("Task deleted successfully 🗑️");
+        setTaskToDelete(null);
+        setIsDeletingLocal(false);
+      } else {
+        toast.success(
+          editMode
+            ? "Task records updated ✨"
+            : "New task deployed successfully 🚀",
+        );
+        setShowForm(false);
+        setEditMode(false);
+        setForm({
+          title: "",
+          description: "",
+          status: "todo",
+          priority: "medium",
+          deadline: "",
+          project: "",
+          assignedTo: "",
+        });
+      }
+      dispatch(clearTaskSuccess());
+    }
+  }, [error, success, dispatch, editMode, taskToDelete]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.title.trim()) return toast.error("Task title is required!");
@@ -78,40 +105,19 @@ const ManagerTasks: React.FC = () => {
       return toast.error("Please assign the task to a user!");
 
     if (editMode && currentId) {
-      dispatch(updateTask({ id: currentId, updates: form }))
-        .unwrap()
-        .then(() => {
-          toast.success("Task updated successfully");
-          dispatch(getAllTasks());
-          resetForm();
-        })
-        .catch((err: string) => toast.error(err));
+      dispatch(updateTask({ id: currentId, updates: form }));
     } else {
-      dispatch(createTask(form))
-        .unwrap()
-        .then(() => {
-          toast.success("Task created successfully");
-          dispatch(getAllTasks());
-          resetForm();
-        })
-        .catch((err: string) => toast.error(err));
+      dispatch(createTask(form));
     }
   };
 
-  // Delete task
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this task?")) {
-      dispatch(deleteTask(id))
-        .unwrap()
-        .then(() => {
-          toast.success("Task deleted successfully");
-          dispatch(getAllTasks());
-        })
-        .catch((err: string) => toast.error(err));
+  const confirmDelete = async () => {
+    if (taskToDelete) {
+      setIsDeletingLocal(true);
+      await dispatch(deleteTask(taskToDelete));
     }
   };
 
-  // Edit task
   const handleEdit = (task: Task) => {
     setCurrentId(task._id);
     const projectId =
@@ -132,7 +138,6 @@ const ManagerTasks: React.FC = () => {
     setShowForm(true);
   };
 
-  // Reset form
   const resetForm = () => {
     setShowForm(false);
     setEditMode(false);
@@ -148,16 +153,14 @@ const ManagerTasks: React.FC = () => {
     });
   };
 
-  // Filter tasks relevant to manager
   const managerTasks = tasks.filter((t) => {
     const project = projects.find(
       (p) =>
-        p._id === (typeof t.project === "string" ? t.project : t.project?._id)
+        p._id === (typeof t.project === "string" ? t.project : t.project?._id),
     );
 
     if (!project) return false;
 
-    // Normalize managerId whether it's a string or object
     const managerId =
       typeof project.manager === "string"
         ? project.manager
@@ -167,110 +170,139 @@ const ManagerTasks: React.FC = () => {
   });
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-blue-600">Manager Tasks</h1>
+    <div className="p-4 sm:p-6 bg-slate-50/50 min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-black text-slate-800">Manager Tasks</h1>
+          <p className="text-slate-500 text-sm mt-0.5">
+            Allocate and audit workforce task structures for your projects
+          </p>
+        </div>
         <button
           onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg shadow transition hover:bg-blue-100"
+          className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow-sm transition active:scale-95 self-start sm:self-auto w-full sm:w-auto"
         >
-          <PlusCircle stroke="#2563eb" height={20} /> Add Task
+          <PlusCircle stroke="white" height={18} /> <span>Add Task</span>
         </button>
       </div>
 
-      {loading && (
-        <div className="flex justify-center py-10">
-          <Loader2 className="animate-spin text-blue-600" size={32} />
+      {loading && !showForm && !taskToDelete && (
+        <div className="flex flex-col items-center justify-center py-20 text-slate-500 text-sm font-medium">
+          <Loader2 className="animate-spin text-blue-600 w-8 h-8 mb-2" />
+          <span>Restructuring distributed pipelines...</span>
         </div>
       )}
 
       {!loading && managerTasks.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {managerTasks.map((t) => (
             <motion.div
               key={t._id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-md p-6 border hover:shadow-lg transition"
+              className="bg-white rounded-2xl border border-slate-200/70 p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition duration-200"
             >
-              <h2 className="text-lg font-bold text-blue-600 mb-2">
-                {t.title}
-              </h2>
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                {t.description || "No description provided."}
-              </p>
+              <div>
+                <h2 className="text-base font-bold text-slate-800 mb-1 truncate">
+                  {t.title}
+                </h2>
+                <p className="text-slate-500 text-sm mb-4 line-clamp-2 leading-relaxed">
+                  {t.description || "No specific workload logs submitted."}
+                </p>
 
-              <div className="flex flex-col gap-2 text-sm text-gray-500">
-                <div className="flex items-center gap-2">
-                  <ProjectIcon
-                    height={15}
-                    width={15}
-                    stroke="blue"
-                    className="text-gray-400"
-                  />
-                  <span>
-                    {typeof t.project === "string"
-                      ? projects.find((p) => p._id === t.project)?.name ||
-                        "Unknown Project"
-                      : t.project?.name || "Unknown Project"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 ml-0.5">
-                  <Users
-                    height={15}
-                    width={15}
-                    stroke="blue"
-                    className="text-gray-400"
-                  />
-                  <span>{t.assignedTo?.name || "Unassigned"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar1
-                    height={15}
-                    width={15}
-                    stroke="blue"
-                    className="text-gray-400"
-                  />
-                  <span>
-                    {t.deadline
-                      ? new Date(t.deadline).toLocaleDateString()
-                      : "No deadline"}
-                  </span>
+                <div className="flex flex-col gap-2.5 text-xs font-semibold text-slate-600 border-t border-slate-100 pt-3">
+                  <div className="flex items-center gap-2">
+                    <ProjectIcon
+                      height={16}
+                      width={14}
+                      stroke="#64748b"
+                      className="shrink-0"
+                    />
+                    <span className="truncate">
+                      Project:{" "}
+                      <strong className="text-slate-800 font-bold">
+                        {typeof t.project === "string"
+                          ? projects.find((p) => p._id === t.project)?.name ||
+                            "Unknown Link"
+                          : t.project?.name || "Unknown Link"}
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Users
+                      height={16}
+                      width={14}
+                      stroke="#64748b"
+                      className="shrink-0"
+                    />
+                    <span className="truncate">
+                      Operator:{" "}
+                      <strong className="text-slate-800 font-bold">
+                        {t.assignedTo?.name || "Unassigned"}
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar1
+                      height={16}
+                      width={14}
+                      stroke="#64748b"
+                      className="shrink-0"
+                    />
+                    <span>
+                      Timeline:{" "}
+                      <strong className="text-slate-800 font-bold">
+                        {t.deadline
+                          ? new Date(t.deadline).toLocaleDateString()
+                          : "N/A"}
+                      </strong>
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex mt-2 gap-3">
-                <span
-                  className={`px-3 py-1 text-xs font-medium rounded-full ${
-                    t.status === "completed"
-                      ? "bg-green-100 text-green-700"
-                      : t.status === "in-progress"
-                      ? "bg-yellow-100 text-yellow-700"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {t.status}
-                </span>
-                <span
-                  className={`px-3 py-1 text-xs font-medium rounded-full ${
-                    t.priority === "high"
-                      ? "bg-red-100 text-red-700"
-                      : t.priority === "medium"
-                      ? "bg-blue-100 text-blue-700"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {t.priority}
-                </span>
-              </div>
+              <div className="flex items-center justify-between border-t border-slate-50 mt-4 pt-3">
+                <div className="flex gap-1.5">
+                  <span
+                    className={`px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
+                      t.status === "completed"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200/40"
+                        : t.status === "in-progress"
+                          ? "bg-amber-50 text-amber-700 border-amber-200/40"
+                          : "bg-slate-50 text-slate-600 border-slate-200/40"
+                    }`}
+                  >
+                    {t.status}
+                  </span>
+                  <span
+                    className={`px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${
+                      t.priority === "high"
+                        ? "bg-rose-50 text-rose-700 border-rose-200/40"
+                        : t.priority === "medium"
+                          ? "bg-blue-50 text-blue-700 border-blue-200/40"
+                          : "bg-slate-50 text-slate-600 border-slate-200/40"
+                    }`}
+                  >
+                    {t.priority}
+                  </span>
+                </div>
 
-              <div className="flex items-center justify-end mt-4 ml-4">
-                <button onClick={() => handleEdit(t)}>
-                  <EditAnimatedSquare />
-                </button>
-                <button onClick={() => handleDelete(t._id)}>
-                  <Delete height={20} stroke="red" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handleEdit(t)}
+                    className="p-1.5 rounded-lg hover:bg-slate-50 text-slate-600 transition"
+                    aria-label="Edit task"
+                  >
+                    <EditAnimatedSquare />
+                  </button>
+                  <button
+                    onClick={() => setTaskToDelete(t._id)}
+                    className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition"
+                    aria-label="Delete task"
+                  >
+                    <Delete height={18} stroke="currentColor" />
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -278,169 +310,238 @@ const ManagerTasks: React.FC = () => {
       )}
 
       {!loading && managerTasks.length === 0 && (
-        <div className="text-center text-gray-500 italic py-10">
-          No tasks assigned to you or your projects.
+        <div className="text-center bg-white border border-dashed rounded-2xl p-12 text-slate-400 italic text-sm">
+          No task arrays indexed inside this database view.
         </div>
       )}
 
-      {/* Create/Edit Modal */}
-      {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg mx-4 overflow-y-auto max-h-[90vh] custom-scrollbar"
-          >
-            {/* Modal Header & Close button */}
-            <button
-              onClick={resetForm}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition"
+      <AnimatePresence>
+        {showForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => !loading && resetForm()}
+            />
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg z-10 flex flex-col max-h-[85vh]"
             >
-              <X size={20} />
-            </button>
-            <div className="px-6 pt-6 pb-4 border-b">
-              <h2 className="text-xl font-bold text-gray-800">
-                {editMode ? "Edit Task" : "Create Task"}
-              </h2>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
-              {/* Title */}
-              <div>
-                <label className="block text-sm text-gray-600">Title</label>
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm text-gray-600">
-                  Description
-                </label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  className="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                  rows={3}
-                />
-              </div>
-
-              {/* Project */}
-              <div>
-                <label className="block text-sm text-gray-600">Project</label>
-                <CustomDropdown
-                  options={projects.map((p) => ({
-                    label: p.name,
-                    value: p._id,
-                  }))}
-                  selected={form.project}
-                  onSelect={(value) => setForm({ ...form, project: value })}
-                  placeholder="Select Project"
-                />
-              </div>
-
-              {/* Assigned To */}
-              <div>
-                <label className="block text-sm text-gray-600">
-                  Assigned To
-                </label>
-                <CustomDropdown
-                  options={users
-                    .filter((u) => u.roles === "employee") // only employees
-                    .map((u) => ({ label: u.name, value: u._id }))}
-                  selected={form.assignedTo}
-                  onSelect={(value) => setForm({ ...form, assignedTo: value })}
-                  placeholder="Select Employee"
-                />
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-sm text-gray-600">Status</label>
-                <CustomDropdown
-                  options={[
-                    { label: "Todo", value: "todo" },
-                    { label: "In Progress", value: "in-progress" },
-                    { label: "Completed", value: "completed" },
-                  ]}
-                  selected={form.status}
-                  onSelect={(value) =>
-                    setForm({
-                      ...form,
-                      status: value as "todo" | "in-progress" | "completed",
-                    })
-                  }
-                />
-              </div>
-
-              {/* Priority */}
-              <div>
-                <label className="block text-sm text-gray-600">Priority</label>
-                <CustomDropdown
-                  options={[
-                    { label: "Low", value: "low" },
-                    { label: "Medium", value: "medium" },
-                    { label: "High", value: "high" },
-                  ]}
-                  selected={form.priority}
-                  onSelect={(value) =>
-                    setForm({
-                      ...form,
-                      priority: value as "low" | "medium" | "high",
-                    })
-                  }
-                />
-              </div>
-
-              {/* Deadline */}
-              <div>
-                <label className="block text-sm text-gray-600">Deadline</label>
-                <input
-                  type="date"
-                  value={form.deadline || ""}
-                  onChange={(e) =>
-                    setForm({ ...form, deadline: e.target.value })
-                  }
-                  className="w-full mt-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-            </form>
-
-            {/* Modal Actions */}
-            <div className="px-6 py-4 border-t flex justify-end gap-2">
               <button
-                type="button"
                 onClick={resetForm}
-                className="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300"
+                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition"
+                disabled={loading}
               >
-                Cancel
+                <X size={18} />
               </button>
-              <button
-                type="submit"
-                onClick={handleSubmit}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+
+              <div className="px-6 py-4 border-b border-slate-100">
+                <h2 className="text-lg font-bold text-slate-800">
+                  {editMode
+                    ? "Modify Workspace Context"
+                    : "Initialize Workspace Task"}
+                </h2>
+              </div>
+
+              <form
+                onSubmit={handleSubmit}
+                className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar"
               >
-                {loading ? (
-                  <Loader2 className="animate-spin w-5 h-5" />
-                ) : editMode ? (
-                  "Update"
-                ) : (
-                  "Create"
-                )}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Task Title
+                  </label>
+                  <input
+                    type="text"
+                    value={form.title}
+                    onChange={(e) =>
+                      setForm({ ...form, title: e.target.value })
+                    }
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 font-medium"
+                    required
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Workload Description
+                  </label>
+                  <textarea
+                    value={form.description}
+                    onChange={(e) =>
+                      setForm({ ...form, description: e.target.value })
+                    }
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 font-medium resize-none"
+                    rows={3}
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Parent Project Stream
+                  </label>
+                  <CustomDropdown
+                    options={projects.map((p) => ({
+                      label: p.name,
+                      value: p._id,
+                    }))}
+                    selected={form.project}
+                    onSelect={(value) => setForm({ ...form, project: value })}
+                    placeholder="Select Base Pipeline"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Assigned Operator
+                  </label>
+                  <CustomDropdown
+                    options={users
+                      .filter((u) => u.roles === "employee")
+                      .map((u) => ({ label: u.name, value: u._id }))}
+                    selected={form.assignedTo}
+                    onSelect={(value) =>
+                      setForm({ ...form, assignedTo: value })
+                    }
+                    placeholder="Select Responsible Operator"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Lifecycle Phase
+                  </label>
+                  <CustomDropdown
+                    options={[
+                      { label: "Todo Backlog", value: "todo" },
+                      { label: "In Active Progress", value: "in-progress" },
+                      { label: "Task Concluded", value: "completed" },
+                    ]}
+                    selected={form.status}
+                    onSelect={(value) =>
+                      setForm({
+                        ...form,
+                        status: value as TaskForm["status"],
+                      })
+                    }
+                    placeholder="Select Status Stage"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Urgency Index (Priority)
+                  </label>
+                  <CustomDropdown
+                    options={[
+                      { label: "Low Priority", value: "low" },
+                      { label: "Medium Routine", value: "medium" },
+                      { label: "High Escalation", value: "high" },
+                    ]}
+                    selected={form.priority}
+                    onSelect={(value) =>
+                      setForm({
+                        ...form,
+                        priority: value as TaskForm["priority"],
+                      })
+                    }
+                    placeholder="Select Critical Tier"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1 pl-0.5">
+                    Target Deadline
+                  </label>
+                  <input
+                    type="date"
+                    value={form.deadline || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, deadline: e.target.value })
+                    }
+                    className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-800 font-medium"
+                    disabled={loading}
+                  />
+                </div>
+              </form>
+
+              <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex justify-end gap-2.5 rounded-b-2xl">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold bg-slate-200 hover:bg-slate-300 text-slate-700 transition"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  onClick={handleSubmit}
+                  className="flex items-center justify-center gap-2 px-5 py-2 rounded-xl text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white min-w-[80px] shadow-sm transition active:scale-95"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <Loader2 className="animate-spin w-4 h-4" />
+                  ) : editMode ? (
+                    "Update Node"
+                  ) : (
+                    "Deploy Task"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {taskToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+              onClick={() => !isDeletingLocal && setTaskToDelete(null)}
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm relative z-10 text-center"
+            >
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-50 flex items-center justify-center text-red-600 mb-3 border border-red-100">
+                <AlertTriangle size={24} />
+              </div>
+              <h3 className="text-base font-bold text-slate-800">
+                Terminate Task Array
+              </h3>
+              <p className="text-slate-500 text-sm mt-1.5 leading-relaxed">
+                Are you absolutely sure you want to delete this task record?
+                This structural clean cannot be restored.
+              </p>
+              <div className="flex gap-2.5 mt-5 border-t border-slate-50 pt-4">
+                <button
+                  onClick={() => setTaskToDelete(null)}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 transition"
+                  disabled={isDeletingLocal}
+                >
+                  Dismiss
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-2 rounded-xl text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-sm flex items-center justify-center gap-1.5 transition active:scale-95"
+                  disabled={isDeletingLocal}
+                >
+                  {isDeletingLocal ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Confirm Purge"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

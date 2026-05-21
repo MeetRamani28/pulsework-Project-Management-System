@@ -2,9 +2,6 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios, { AxiosError } from "axios";
 import Cookies from "js-cookie";
 
-const API_URL = import.meta.env.VITE_API_URL;
-
-// ================== Types ==================
 export interface User {
   _id: string;
   name: string;
@@ -38,9 +35,7 @@ const initialState: UserState = {
   success: false,
 };
 
-// ================== Async Thunks ==================
 
-// Get logged-in user profile
 export const getCurrentUser = createAsyncThunk<
   User,
   void,
@@ -48,8 +43,8 @@ export const getCurrentUser = createAsyncThunk<
 >("users/getCurrentUser", async (_, { rejectWithValue }) => {
   try {
     const token = Cookies.get("token");
-    const res = await axios.get(`${API_URL}/users/me`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await axios.get("/users/me", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return res.data as User;
   } catch (err) {
@@ -60,7 +55,6 @@ export const getCurrentUser = createAsyncThunk<
   }
 });
 
-// Update my profile
 export const updateMyProfile = createAsyncThunk<
   User,
   FormData,
@@ -68,10 +62,10 @@ export const updateMyProfile = createAsyncThunk<
 >("users/updateMyProfile", async (formData, { rejectWithValue }) => {
   try {
     const token = Cookies.get("token");
-    const res = await axios.put(`${API_URL}/users/me/update`, formData, {
+    const res = await axios.put("/users/me/update", formData, {
       headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "multipart/form-data",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        "Content-Type": "multipart/form-data", // ફાઈલ અપલોડ માટે જરૂરી
       },
     });
     return res.data as User;
@@ -83,7 +77,6 @@ export const updateMyProfile = createAsyncThunk<
   }
 });
 
-// Get all users
 export const getAllUsers = createAsyncThunk<
   User[],
   void,
@@ -91,8 +84,8 @@ export const getAllUsers = createAsyncThunk<
 >("users/getAllUsers", async (_, { rejectWithValue }) => {
   try {
     const token = Cookies.get("token");
-    const res = await axios.get(`${API_URL}/users/all`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await axios.get("/users/all", {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return res.data as User[];
   } catch (err) {
@@ -103,7 +96,6 @@ export const getAllUsers = createAsyncThunk<
   }
 });
 
-// Get user by ID
 export const getUserById = createAsyncThunk<
   User,
   string,
@@ -111,8 +103,8 @@ export const getUserById = createAsyncThunk<
 >("users/getUserById", async (id, { rejectWithValue }) => {
   try {
     const token = Cookies.get("token");
-    const res = await axios.get(`${API_URL}/users/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await axios.get(`/users/${id}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return res.data as User;
   } catch (err) {
@@ -121,7 +113,6 @@ export const getUserById = createAsyncThunk<
   }
 });
 
-// Update user (admin/manager)
 export const updateUser = createAsyncThunk<
   User,
   { id: string; formData: FormData },
@@ -129,9 +120,9 @@ export const updateUser = createAsyncThunk<
 >("users/updateUser", async ({ id, formData }, { rejectWithValue }) => {
   try {
     const token = Cookies.get("token");
-    const res = await axios.put(`${API_URL}/users/update/${id}`, formData, {
+    const res = await axios.put(`/users/update/${id}`, formData, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         "Content-Type": "multipart/form-data",
       },
     });
@@ -144,7 +135,6 @@ export const updateUser = createAsyncThunk<
   }
 });
 
-// Delete user
 export const deleteUser = createAsyncThunk<
   string,
   string,
@@ -152,8 +142,8 @@ export const deleteUser = createAsyncThunk<
 >("users/deleteUser", async (id, { rejectWithValue }) => {
   try {
     const token = Cookies.get("token");
-    await axios.delete(`${API_URL}/users/delete/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    await axios.delete(`/users/delete/${id}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
     return id;
   } catch (err) {
@@ -164,7 +154,6 @@ export const deleteUser = createAsyncThunk<
   }
 });
 
-// ================== Slice ==================
 const userSlice = createSlice({
   name: "users",
   initialState,
@@ -184,7 +173,6 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Get current user
       .addCase(getCurrentUser.pending, (state) => {
         state.loading = true;
       })
@@ -197,7 +185,6 @@ const userSlice = createSlice({
         state.error = action.payload || null;
       })
 
-      // Update my profile
       .addCase(updateMyProfile.pending, (state) => {
         state.loading = true;
       })
@@ -211,7 +198,6 @@ const userSlice = createSlice({
         state.error = action.payload || null;
       })
 
-      // Get all users
       .addCase(getAllUsers.pending, (state) => {
         state.loading = true;
       })
@@ -224,7 +210,6 @@ const userSlice = createSlice({
         state.error = action.payload || null;
       })
 
-      // Get user by ID
       .addCase(getUserById.pending, (state) => {
         state.loading = true;
       })
@@ -237,7 +222,6 @@ const userSlice = createSlice({
         state.error = action.payload || null;
       })
 
-      // Update user
       .addCase(updateUser.pending, (state) => {
         state.loading = true;
       })
@@ -255,7 +239,6 @@ const userSlice = createSlice({
         state.error = action.payload || null;
       })
 
-      // Delete user
       .addCase(deleteUser.pending, (state) => {
         state.loading = true;
       })
